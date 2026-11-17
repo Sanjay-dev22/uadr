@@ -1,0 +1,4 @@
+{
+  "_comment": "Module registry. Maps source paths to the one module doc an agent must read before touching them. Edit via: python3 .automation/uadr.py new module <name> --paths <glob>",
+  "modules": []
+}

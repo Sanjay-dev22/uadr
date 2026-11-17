@@ -1,0 +1,178 @@
+{
+  "_comment": "Task router. 'read' = required before changing code; '@module' = module doc(s) for the paths you will touch (resolve with: uadr.py route <type> --path <file>). 'consider' = read only if the stated condition applies. 'skills' = load only when a workflow step needs the technique. Missing docs are skipped, not blockers.",
+  "always": [".agent/memory/state.md"],
+  "routes": {
+    "feature": {
+      "when": "Build a capability that does not exist yet",
+      "keywords": ["add", "new feature", "implement", "create", "support", "build"],
+      "workflow": ".agent/workflows/feature.md",
+      "read": ["@module", "docs/development/coding-standards.md"],
+      "consider": {
+        "docs/architecture/overview.md": "the change spans more than one module",
+        "docs/project/requirements.md": "acceptance criteria are unclear",
+        "docs/testing/testing-strategy.md": "unsure which test level applies"
+      },
+      "skills": ["codebase-navigation", "feature-implementation", "test-generation"],
+      "approval": "New external dependency, new module, or public contract change"
+    },
+    "enhancement": {
+      "when": "Change or extend behaviour of an existing feature",
+      "keywords": ["enhance", "extend", "improve", "modify", "change behaviour", "update existing", "tweak"],
+      "workflow": ".agent/workflows/enhancement.md",
+      "read": ["@module"],
+      "consider": {
+        "docs/development/coding-standards.md": "you have not worked in this module's language this session",
+        "docs/api/index.md": "a public contract is affected"
+      },
+      "skills": ["codebase-navigation", "dependency-analysis", "test-generation"],
+      "approval": "Breaking change to a public contract or stored data"
+    },
+    "bugfix": {
+      "when": "Observed behaviour differs from intended behaviour",
+      "keywords": ["bug", "fix", "error", "crash", "broken", "regression", "fails", "failing", "incorrect", "wrong", "exception"],
+      "workflow": ".agent/workflows/bugfix.md",
+      "read": ["@module"],
+      "consider": {
+        ".agent/memory/known-issues.md": "the symptom may be a known limitation",
+        "docs/development/setup-and-build.md": "you cannot reproduce locally"
+      },
+      "skills": ["root-cause-analysis", "test-generation"],
+      "approval": "Fix requires a data repair or a public contract change"
+    },
+    "refactor": {
+      "when": "Improve structure without changing observable behaviour",
+      "keywords": ["refactor", "clean up", "cleanup", "restructure", "rename", "simplify", "extract", "deduplicate"],
+      "workflow": ".agent/workflows/refactor.md",
+      "read": ["@module", "docs/development/coding-standards.md"],
+      "consider": {
+        "docs/architecture/overview.md": "code moves across module boundaries"
+      },
+      "skills": ["dependency-analysis", "code-quality-review"],
+      "approval": "Moving code across module boundaries or changing public interfaces"
+    },
+    "architecture-change": {
+      "when": "Change module boundaries, cross-cutting patterns, technology choices, or system topology",
+      "keywords": ["architecture", "redesign", "split", "new module", "new service", "migrate to", "boundary", "replace framework"],
+      "workflow": ".agent/workflows/architecture-change.md",
+      "read": ["docs/architecture/overview.md", "docs/index.md", "@module"],
+      "consider": {
+        "docs/architecture/data-flow-and-integrations.md": "data paths or external systems are affected",
+        "docs/project/requirements.md": "non-functional requirements drive the change"
+      },
+      "skills": ["architecture-discovery", "dependency-analysis"],
+      "approval": "ALWAYS: an accepted ADR is required before implementation"
+    },
+    "api": {
+      "when": "Add or change an externally consumed interface (HTTP, RPC, events, CLI, library API)",
+      "keywords": ["api", "endpoint", "rest", "graphql", "grpc", "contract", "webhook", "openapi"],
+      "workflow": ".agent/workflows/api.md",
+      "read": ["@module", "docs/api/index.md"],
+      "consider": {
+        "docs/security/security.md": "the interface handles authentication, authorisation, or personal data",
+        "docs/development/coding-standards.md": "naming or error conventions are unclear"
+      },
+      "skills": ["feature-implementation", "test-generation", "security-analysis"],
+      "approval": "Breaking change, removal, or new unauthenticated interface"
+    },
+    "database": {
+      "when": "Change schema, migrations, indexes, or stored data shape",
+      "keywords": ["database", "schema", "migration", "table", "column", "index", "sql", "data model"],
+      "workflow": ".agent/workflows/database.md",
+      "read": ["docs/database/schema.md", "@module"],
+      "consider": {
+        "docs/operations/deployment.md": "the migration needs deploy ordering or downtime",
+        "docs/architecture/data-flow-and-integrations.md": "other systems read the affected data"
+      },
+      "skills": ["dependency-analysis", "test-generation"],
+      "approval": "ALWAYS before running against any shared or production database; ALWAYS for destructive changes"
+    },
+    "dependency-upgrade": {
+      "when": "Add, upgrade, replace, or remove a third-party dependency or runtime",
+      "keywords": ["upgrade", "dependency", "dependencies", "bump", "package", "library version", "cve", "runtime version"],
+      "workflow": ".agent/workflows/dependency-upgrade.md",
+      "read": ["docs/development/setup-and-build.md"],
+      "consider": {
+        "docs/architecture/overview.md": "the dependency is a framework or runtime",
+        "@module": "the upgrade requires code changes"
+      },
+      "skills": ["dependency-analysis", "security-analysis"],
+      "approval": "New dependency, major version upgrade, or licence change"
+    },
+    "tests": {
+      "when": "Add or repair automated tests without changing production behaviour",
+      "keywords": ["test", "tests", "coverage", "unit test", "integration test", "e2e", "flaky"],
+      "workflow": ".agent/workflows/tests.md",
+      "read": ["docs/testing/testing-strategy.md", "@module"],
+      "consider": {},
+      "skills": ["test-generation"],
+      "approval": "Deleting or disabling existing tests"
+    },
+    "security-review": {
+      "when": "Assess or fix a security weakness",
+      "keywords": ["security", "vulnerability", "audit", "auth", "secret", "injection", "xss", "csrf", "permission"],
+      "workflow": ".agent/workflows/security-review.md",
+      "read": [".agent/policies/security.md", "@module"],
+      "consider": {
+        "docs/security/security.md": "it exists (project threat model and controls)",
+        "docs/architecture/data-flow-and-integrations.md": "the finding involves trust boundaries"
+      },
+      "skills": ["security-analysis", "dependency-analysis"],
+      "approval": "Changing authentication, authorisation, cryptography, or disclosure of a vulnerability"
+    },
+    "performance": {
+      "when": "Measure and improve speed, throughput, or resource use",
+      "keywords": ["performance", "slow", "latency", "optimi", "memory", "profile", "throughput", "timeout", "cpu"],
+      "workflow": ".agent/workflows/performance.md",
+      "read": ["@module"],
+      "consider": {
+        "docs/project/requirements.md": "a performance target is needed",
+        "docs/architecture/data-flow-and-integrations.md": "the hot path crosses modules",
+        "docs/operations/observability.md": "production metrics are needed"
+      },
+      "skills": ["performance-analysis", "test-generation"],
+      "approval": "Adding caches or infrastructure, or trading correctness guarantees for speed"
+    },
+    "pr-review": {
+      "when": "Review a proposed change without authoring it",
+      "keywords": ["review", "pull request", "pr", "code review", "diff"],
+      "workflow": ".agent/workflows/pr-review.md",
+      "read": [".agent/policies/quality.md", "@module"],
+      "consider": {
+        "docs/development/coding-standards.md": "style or convention findings are in scope",
+        "docs/index.md": "the change may contradict a recorded decision (see its decisions section)"
+      },
+      "skills": ["code-quality-review", "security-analysis"],
+      "approval": "Approving or merging on behalf of a human"
+    },
+    "production-incident": {
+      "when": "Something is wrong in a deployed environment",
+      "keywords": ["production", "incident", "outage", "alert", "prod", "hotfix", "downtime", "live issue"],
+      "workflow": ".agent/workflows/production-incident.md",
+      "read": ["docs/operations/observability.md", "docs/operations/deployment.md"],
+      "consider": {
+        "@module": "a suspect component is identified",
+        ".agent/memory/known-issues.md": "the symptom may be known"
+      },
+      "skills": ["root-cause-analysis"],
+      "approval": "ALWAYS for any action in production (access, restart, rollback, data change, deploy)"
+    },
+    "onboard-existing-repo": {
+      "when": "Mode B: adapt an existing codebase to this framework",
+      "keywords": ["onboard", "convert", "adopt", "existing repository", "existing repo", "migrate repository"],
+      "workflow": ".agent/workflows/onboard-existing-repo.md",
+      "read": [".agent/policies/documentation.md"],
+      "consider": {},
+      "skills": ["repository-exploration", "architecture-discovery", "dependency-analysis", "documentation-generation", "technical-debt-identification"],
+      "approval": "Merging or replacing existing instruction files; any change outside framework and docs paths"
+    },
+    "init-greenfield": {
+      "when": "Mode A: start a new project on this framework",
+      "keywords": ["greenfield", "new project", "initialize", "initialise", "bootstrap", "scaffold", "from scratch"],
+      "workflow": ".agent/workflows/init-greenfield.md",
+      "read": [".agent/policies/documentation.md"],
+      "consider": {},
+      "skills": ["documentation-generation"],
+      "approval": "Technology stack and architecture choices (record as ADRs)"
+    }
+  }
+}

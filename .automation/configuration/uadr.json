@@ -1,0 +1,106 @@
+{
+  "framework_version": "1.0.0",
+  "project": {
+    "name": "UADR Template",
+    "mode": "template"
+  },
+  "commands": {
+    "setup": "",
+    "format": "",
+    "lint": "",
+    "static": "",
+    "build": "",
+    "test": "python3 -m unittest discover -s .automation/tests -q"
+  },
+  "docs": {
+    "lint_paths": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      "README.md",
+      "CONTRIBUTING.md",
+      "CHANGELOG.md",
+      ".agent/**",
+      "docs/**",
+      ".github/**/*.md"
+    ],
+    "legacy_paths": []
+  },
+  "required_files": [
+    "AGENTS.md",
+    ".agent/README.md",
+    ".agent/routing/routes.json",
+    ".agent/routing/modules.json",
+    ".agent/policies/approvals.md",
+    ".agent/policies/security.md",
+    ".agent/policies/quality.md",
+    ".agent/policies/context-loading.md",
+    ".agent/policies/documentation.md",
+    ".agent/memory/state.md",
+    ".agent/memory/handover.md",
+    ".agent/memory/known-issues.md",
+    ".automation/uadr.py",
+    "docs/index.md"
+  ],
+  "framework_paths": [
+    ".agent",
+    ".automation",
+    "docs/templates",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "CONTRIBUTING.md",
+    ".claude/settings.json",
+    ".github/copilot-instructions.md",
+    ".github/instructions",
+    ".github/prompts",
+    ".github/ISSUE_TEMPLATE",
+    ".github/pull_request_template.md",
+    ".github/workflows/uadr-checks.yml"
+  ],
+  "adapters": {
+    "instruction_files": [
+      "CLAUDE.md",
+      ".github/copilot-instructions.md",
+      ".github/instructions/*.instructions.md",
+      ".github/prompts/*.prompt.md"
+    ],
+    "skill_links": [
+      ".claude/skills",
+      ".agents/skills"
+    ]
+  },
+  "context_budget": {
+    "entry_point_tokens": 700,
+    "workflow_tokens": 950,
+    "skill_tokens": 700,
+    "memory_file_tokens": 900,
+    "bootstrap_tokens": 3000,
+    "adapter_lines": 15
+  },
+  "secrets": {
+    "allow_paths": [
+      ".automation/validation/check_secrets.py",
+      ".automation/tests/**"
+    ]
+  },
+  "ignore_dirs": [
+    ".git",
+    "node_modules",
+    "vendor",
+    "dist",
+    "build",
+    "out",
+    "target",
+    "bin",
+    "obj",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".idea",
+    ".next",
+    ".gradle",
+    "coverage",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache"
+  ]
+}

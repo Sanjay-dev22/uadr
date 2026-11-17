@@ -1,0 +1,24 @@
+# Example Azure DevOps pipeline. Copy to azure-pipelines.yml at the repository root and adapt.
+trigger:
+  branches:
+    include: [main]
+pr:
+  branches:
+    include: ["*"]
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: "3.12"
+  # Add your stack's toolchain tasks here (NodeTool, JavaToolInstaller, GoTool, UseDotNet, ...).
+  - script: python3 .automation/uadr.py check
+    displayName: UADR framework gates
+  - script: python3 .automation/uadr.py audit --check
+    displayName: UADR context budget
+  - script: python3 .automation/uadr.py run setup || [ $? -eq 3 ]
+    displayName: Project setup
+  - script: python3 .automation/uadr.py run all
+    displayName: Lint, static analysis, build, test

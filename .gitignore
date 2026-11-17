@@ -1,0 +1,14 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python (framework automation)
+__pycache__/
+*.pyc
+
+# Editors and OS
+.idea/
+.DS_Store

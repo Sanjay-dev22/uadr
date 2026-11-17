@@ -1,0 +1,48 @@
+name: Agent task
+description: A development task written so an AI agent can execute it without follow-up questions
+labels: ["agent-task"]
+body:
+  - type: dropdown
+    id: route
+    attributes:
+      label: Task type
+      description: Matches a route in .agent/routing/routes.json
+      options:
+        - feature
+        - enhancement
+        - bugfix
+        - refactor
+        - architecture-change
+        - api
+        - database
+        - dependency-upgrade
+        - tests
+        - security-review
+        - performance
+        - production-incident
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be true when this is done, and why it matters
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+      description: Testable statements, one per line
+    validations:
+      required: true
+  - type: input
+    id: paths
+    attributes:
+      label: Modules or paths
+      description: Where the change is expected (leave empty if unknown)
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and pre-approvals
+      description: Out-of-scope items, and any approvals granted in advance (see .agent/policies/approvals.md)
