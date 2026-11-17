@@ -40,6 +40,8 @@ def main():
     records = []
     for path in sorted((work / "results").glob("*.json")):
         record = json.loads(path.read_text())
+        if record.get("interrupted") or not record.get("finished", True):
+            continue
         record.update(analyse_transcript(path.with_suffix(".transcript.jsonl")))  # refresh derived metrics
         records.append(record)
     onboarding = json.loads((work / "onboarding.json").read_text()) if (work / "onboarding.json").exists() else None

@@ -313,6 +313,9 @@ def run_one(job: dict) -> dict:
     transcript = out.with_suffix(".transcript.jsonl")
     result = run_agent(TASK_PROMPT.format(statement=task["statement"]), workspace, job["model"],
                        transcript, job["timeout"])
+    if not usage_summary(result)["finished"]:  # usage limit, timeout, crash: not a measurement of the agent
+        print(f"  {run_id:<52} INTERRUPTED ({result.get('subtype')}); not recorded, rerun to retry", flush=True)
+        return {"run": run_id, "interrupted": True}
     record = {"run": run_id, "task": task["id"], "type": task["type"], "condition": job["condition"],
               "rep": job["rep"], "model": job["model"], **usage_summary(result), **analyse_transcript(transcript),
               **change_metrics(workspace, suite),
@@ -334,6 +337,8 @@ def cmd_onboard(args, suite) -> None:
     print(adopt.stdout[-600:])
     result = run_agent(ONBOARD_PROMPT, workspace, args.model, work / "onboarding.transcript.jsonl",
                        args.timeout)
+    if not usage_summary(result)["finished"]:
+        raise SystemExit(f"onboarding did not finish ({result.get('subtype')}); nothing saved. Rerun.")
     status = git(workspace, "status", "--porcelain", "-uall").splitlines()
     modified = [s[3:] for s in status if not s.startswith("??")]
     overlay = work / "uadr-overlay"
