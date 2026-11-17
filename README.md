@@ -21,12 +21,13 @@ The docs an agent is routed to for a typical task are an estimated 1,300 to 1,60
 
 ## Measured results
 
-The framework was benchmarked with real agent runs on real upstream bug fixes, judged by hidden tests: 108 runs on [pallets/click](https://github.com/pallets/click) with two models. Read [benchmark/README.md](benchmark/README.md) before adopting. In short:
+The framework was benchmarked with real agent runs on real upstream bug fixes, judged by hidden tests: 156 runs on [pallets/click](https://github.com/pallets/click) (13,000 lines) and [sympy/sympy](https://github.com/sympy/sympy) (530,000 lines), with two models. Read [benchmark/README.md](benchmark/README.md) before adopting. In short:
 
-- On small, well-specified tasks in a small repository, the framework **cost 24% to 86% more** per task than the bare repository and was never cheaper. It did not save tokens.
-- Every condition resolved every task, so no correctness benefit was shown or could have been.
-- A seven-line hand-written `AGENTS.md` produced the same test and changelog discipline at lower cost.
-- Larger repositories, vaguer tasks, multi-session work, and governance behaviour, which are what the framework is designed for, are **not yet measured**.
+- The framework **cost more per task and never saved tokens**: 24% to 86% more than the bare repository on click, 31% more on SymPy.
+- Every condition solved every task, so no correctness benefit was shown, and these tasks could not have shown one.
+- A seven-line hand-written `AGENTS.md` produced the same test discipline at equal or lower cost.
+- Agents ran the router but never opened a workflow or module doc, so the generated per-module docs went unused.
+- Not yet measured: vague, symptom-only requests where the agent must first locate the code; multi-session work; governance and safety behaviour.
 
 ## Quick start
 

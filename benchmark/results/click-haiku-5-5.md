@@ -17,9 +17,10 @@ Repository: https://github.com/pallets/click. Agent: `claude -p` (Claude Code he
 | Mean output tokens | 7,695 | 6,571 | 12,531 |
 | Context at first model call (tokens) | 37,734 | 38,087 | 39,408 |
 | Peak context (tokens) | 51,486 | 51,336 | 63,544 |
-| Mean turns | 13.6 | 11.8 | 19.8 |
+| Mean turns | 12.5 | 10.8 | 18.1 |
 | Mean tool calls | 12.6 | 10.8 | 18.8 |
-| Mean wall time (s) | 72 | 41 | 91 |
+| Mean model (API) time (s) | 33 | 28 | 56 |
+| Mean wall time (s), includes environment stalls | 72 | 41 | 91 |
 | Ran tests itself | 100% | 100% | 100% |
 | Added or changed tests | 83% | 100% | 100% |
 | Updated changelog | 42% | 100% | 100% |
@@ -44,14 +45,14 @@ Framework adherence in `uadr-v1.1`: read project state in 100% of runs, used the
 
 | Framework | Compared with | Cost | Total input tokens | Output tokens | Turns | Tasks where framework was cheaper |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| uadr-v1.1 | bare | +86% | +108% | +109% | +66% | 0/6 |
-| uadr-v1.1 | minimal | +85% | +105% | +103% | +72% | 0/6 |
+| uadr-v1.1 | bare | +86% | +108% | +109% | +72% | 0/6 |
+| uadr-v1.1 | minimal | +85% | +105% | +103% | +73% | 0/6 |
 
 Values are the mean of per-task ratios (framework / baseline - 1). Positive means the framework used more.
 
 ## One-time onboarding cost
 
-The framework condition requires onboarding the repository once. Measured for this repository with the same model: **$0.91**, 2,251,050 input tokens, 35,711 output tokens, 30 turns, 5 minutes. Existing project files modified: 0. `uadr.py check` exit code afterwards: 0.
+The framework condition requires onboarding the repository once. Measured for this repository with the same model: **$0.91**, 2,251,050 input tokens, 35,711 output tokens, 29 turns, 5 minutes. Existing project files modified: 0. `uadr.py check` exit code afterwards: 0.
 
 `uadr-v1.1` against `bare`: costs $0.009 more per task on average, so onboarding is not recovered through token savings on tasks of this kind.
 

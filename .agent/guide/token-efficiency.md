@@ -8,11 +8,12 @@ read_when: Human adopters evaluating cost; agents only when changing budgets or 
 
 The figures further down are estimates of the documents an agent is routed to. Real agent runs tell a less favourable story, reported in full in `benchmark/README.md`:
 
-- On six real bug-fix and feature tasks in a 13,000-line repository, the framework increased cost per task by 24% to 42% with Sonnet 5.5 and by 86% with Haiku 5.5, compared with the same repository without it.
+- On real bug-fix and feature tasks, the framework increased cost per task compared with the same repository without it: by 24% to 42% (Sonnet 5.5) and 86% (Haiku 5.5) on a 13,000-line repository, and by 31% (Sonnet 5.5) on a 530,000-line repository.
+- Agents never opened a module doc or workflow on either repository, so the routed reading list was not what drove their behaviour.
 - The always-loaded overhead, measured at the first model call, was about 1,700 tokens, not the roughly 550 of `AGENTS.md` alone. Platforms that support skills preload every skill's name and description.
 - That overhead is paid again on every model call of a task, and routing adds turns. On tasks an agent can solve in five turns with a single search, these costs outweigh anything progressive loading saves.
 
-Progressive loading limits how much documentation an agent reads. It does not make an agent cheaper than one that needs no documentation at all, and the benchmark has not yet tested repositories large enough for documentation to be necessary.
+Progressive loading limits how much documentation an agent reads. It does not make an agent cheaper than one that needs no documentation at all, and the benchmark has not yet tested requests vague enough that the agent must work out where to look.
 
 ## Mechanism
 

@@ -7,6 +7,7 @@ Notable changes to the UADR framework. Format: [Keep a Changelog](https://keepac
 
 ### Added
 
+- SymPy benchmark suite (8 tasks) and harness support for large repositories; the harness no longer records interrupted runs and takes token totals from `modelUsage`.
 - Benchmark harness (`benchmark/`): mines real upstream fixes as tasks, runs a headless agent with and without the framework, and scores with hidden tests. Results for pallets/click with two models are included.
 - `uadr.py route` prints what the task must deliver, read from the workflow.
 - `uadr.py audit` reports the token cost of preloaded skill descriptions.

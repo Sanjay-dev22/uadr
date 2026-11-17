@@ -17,9 +17,10 @@ Repository: https://github.com/pallets/click. Agent: `claude -p` (Claude Code he
 | Mean output tokens | 1,581 | 1,852 | 1,867 | 2,352 |
 | Context at first model call (tokens) | 36,902 | 37,249 | 38,684 | 38,568 |
 | Peak context (tokens) | 40,513 | 41,531 | 43,190 | 44,602 |
-| Mean turns | 5.6 | 4.7 | 6.0 | 6.8 |
+| Mean turns | 5.4 | 4.7 | 5.9 | 6.8 |
 | Mean tool calls | 4.6 | 3.7 | 5.0 | 5.8 |
-| Mean wall time (s) | 20 | 21 | 25 | 28 |
+| Mean model (API) time (s) | 12 | 13 | 14 | 17 |
+| Mean wall time (s), includes environment stalls | 20 | 21 | 25 | 28 |
 | Ran tests itself | 94% | 100% | 100% | 100% |
 | Added or changed tests | 0% | 100% | 44% | 100% |
 | Updated changelog | 0% | 100% | 33% | 100% |
@@ -46,17 +47,17 @@ Framework adherence in `uadr-v1.1`: read project state in 100% of runs, used the
 
 | Framework | Compared with | Cost | Total input tokens | Output tokens | Turns | Tasks where framework was cheaper |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| uadr | bare | +24% | +20% | +20% | +9% | 0/6 |
-| uadr | minimal | +13% | +35% | -2% | +30% | 0/6 |
-| uadr-v1.1 | bare | +42% | +45% | +58% | +28% | 0/6 |
-| uadr-v1.1 | minimal | +30% | +56% | +27% | +46% | 0/6 |
-| uadr-v1.1 | uadr | +15% | +23% | +33% | +19% | 1/6 |
+| uadr | bare | +24% | +20% | +20% | +13% | 0/6 |
+| uadr | minimal | +13% | +35% | -2% | +29% | 0/6 |
+| uadr-v1.1 | bare | +42% | +45% | +58% | +33% | 0/6 |
+| uadr-v1.1 | minimal | +30% | +56% | +27% | +45% | 0/6 |
+| uadr-v1.1 | uadr | +15% | +23% | +33% | +20% | 1/6 |
 
 Values are the mean of per-task ratios (framework / baseline - 1). Positive means the framework used more.
 
 ## One-time onboarding cost
 
-The framework condition requires onboarding the repository once. Measured for this repository with the same model: **$0.91**, 2,251,050 input tokens, 35,711 output tokens, 30 turns, 5 minutes. Existing project files modified: 0. `uadr.py check` exit code afterwards: 0.
+The framework condition requires onboarding the repository once. Measured for this repository with the same model: **$0.91**, 2,251,050 input tokens, 35,711 output tokens, 29 turns, 5 minutes. Existing project files modified: 0. `uadr.py check` exit code afterwards: 0.
 
 `uadr` against `bare`: costs $0.019 more per task on average, so onboarding is not recovered through token savings on tasks of this kind.
 

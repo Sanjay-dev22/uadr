@@ -42,34 +42,51 @@ Repository: [pallets/click](https://github.com/pallets/click) (about 13,000 line
 | Added a test | 83% | 100% | 100% |
 | Updated the changelog | 42% | 100% | 100% |
 
-### One-time onboarding
+### Large repository: SymPy, Sonnet 5.5, 2 repetitions, 48 runs
+
+[sympy/sympy](https://github.com/sympy/sympy): about 530,000 lines across dozens of subpackages. Eight bug fixes, one from each of eight subpackages. SymPy's own `AGENTS.md` was removed in every condition so all start from the same code. Scoring runs the changed test files of the real fix. Full table: [results/sympy-sonnet-5-5.md](results/sympy-sonnet-5-5.md).
+
+| | bare | minimal | uadr 1.1 |
+| --- | ---: | ---: | ---: |
+| Resolved | 16/16 | 16/16 | 16/16 |
+| Mean cost per task | $0.138 | $0.176 | $0.170 |
+| Mean input tokens, all calls | 350,672 | 451,806 | 460,225 |
+| Mean turns | 8.2 | 9.9 | 10.2 |
+| Mean model time | 29 s | 40 s | 33 s |
+| Added a test | 19% | 100% | 100% |
+| Opened a module doc | n/a | n/a | 0% |
+
+Paired by task, the framework cost 31% more than bare (more expensive on 7 of 8 tasks) and 11% more than the short note (more expensive on 6 of 8). Onboarding SymPy cost $5.09 and took 17 minutes (219 turns, 43 module docs, no existing file modified). Against the short note the framework saves about $0.006 per task, so onboarding would take around 865 tasks to repay; against bare it costs more per task and never repays.
+
+### One-time onboarding (click)
 
 Onboarding click with Sonnet 5.5 cost $0.91 and took 5 minutes: 30 turns, 12 module docs, an architecture overview, working commands. It modified no existing file and the gates passed afterwards.
 
 ## What the results say
 
-1. **The framework did not reduce token use on these tasks. It increased it.** Against the bare repository, cost per task was 24% higher with version 1.0 and 42% higher with 1.1 on Sonnet, and 86% higher on Haiku. It was never cheaper on any of the six tasks. Because there is no per-task saving, the onboarding cost is not recovered.
-2. **It did not improve correctness, and this benchmark could not have shown it if it did.** Every condition resolved every task, so the tasks are too easy to separate the conditions on success rate.
-3. **A seven-line `AGENTS.md` matched the framework's measurable quality benefit at lower cost.** Without instructions, Sonnet never added a test or changelog entry. With the short file it always did. Framework 1.0 did so less than half the time, because its entry point delegated that rule to a workflow file the agent did not open.
-4. **Agents follow only what is in the entry point.** With 1.0, Sonnet read the state file every time, used the router in 44% of runs, and never opened a workflow or module doc. Version 1.1 moved the done-criteria into `AGENTS.md` and made the router print the deliverables; router use and test and changelog rates all went to 100%, at a further 15% cost.
-5. **The always-loaded overhead is larger than the framework's own estimate.** The first model call carried about 1,700 more tokens with the framework than without, not the roughly 550 estimated for `AGENTS.md` alone. The difference is mostly the twelve skill descriptions that skill-aware platforms preload. The audit command now counts them.
+1. **The framework did not reduce token use or cost on either repository.** On click it cost 24% to 86% more than bare. On SymPy, a repository about 40 times larger, it cost 31% more than bare and 11% more than a short hand-written note. It was cheaper than bare on 1 of 8 SymPy tasks.
+2. **It did not improve correctness, and these tasks could not have shown it.** All 108 click runs and all 48 SymPy runs resolved their task in every condition.
+3. **A seven-line `AGENTS.md` matched the framework's measurable discipline at equal or lower cost.** Without instructions, agents rarely added tests (0% on click, 19% on SymPy). With the short file, or the framework, they always did.
+4. **Agents follow only what is in the entry point.** In every framework condition they read the state file and ran the router (94% to 100%), but no run ever opened a workflow file or a module doc, on either repository, even though the router named the correct module doc each time (for example `docs/modules/algebras.md` for a quaternion fix). They went straight to searching the source. The 43 module docs written for SymPy, which cost $5.09 to produce, were never read.
+5. **The always-loaded overhead is about 1,700 tokens**, measured at the first model call, larger than the estimate for `AGENTS.md` alone, because skill-aware platforms preload every skill description.
 6. **A weaker model followed the framework more closely and paid more for it.** Haiku opened module docs in 75% of runs and ran the gates in 92%, which is where its extra turns went.
 
 ## What this benchmark does not show
 
-- **Large or multi-module repositories.** Click is small enough that a single search finds the code. Routing and module docs are designed for repositories where that is not true; that case is untested here.
-- **Harder or vaguer tasks.** These statements include a reproduction and the expected output. Tasks needing architectural understanding, or with unclear requirements, are untested.
+- **Whether module docs help an agent that does not already know where to look.** Every task statement names the function or class involved (`Quaternion.from_rotation_matrix`, `solve`, `reshape`), so a single search finds the code even in a 530,000-line repository. The situation module docs are designed for, a vague request where the agent must first work out which subpackage is involved, is untested. A fair test would use issue-style descriptions that name only symptoms.
 - **Multi-session work, handover, governance, and safety behaviour.** Nothing here exercises memory, approvals, or secret handling.
-- **Other agents and other languages.** One agent CLI, two models, one Python repository.
-- **Statistical confidence.** Two or three repetitions per cell; per-task variation between repetitions is often larger than the differences between `bare` and `minimal`.
+- **Other agents, languages, and frameworks.** One agent CLI, two models, two Python repositories.
+- **Statistical confidence.** Two or three repetitions per cell; per-task variation between repetitions is often larger than the difference between `bare` and `minimal`.
 
 The environment also adds about 37,000 tokens of harness system prompt and tools to every call in every condition, which dilutes relative differences in input tokens.
 
-One task statement was corrected during the benchmark. The first statement for `runner-context-settings` omitted a requirement that a hidden test checks, so every condition failed that one test. Those nine runs were discarded and rerun with the corrected statement.
+Two measurement problems were found and fixed during the benchmark. Runs interrupted by a usage limit looked like failures with zero tokens; 26 SymPy runs and one onboarding were discarded and rerun, and the harness now refuses to record unfinished runs. Separately, in 10 of the 16 SymPy framework runs the agent's top-level `usage` field covered only part of the run (reporting about 198,000 input tokens when the true figure was 460,000), so token and turn figures are now taken from `modelUsage` and the transcript. Click figures were checked and agree under both methods. Those same 10 runs also show about 12 minutes of wall time against 16 to 62 seconds of model time, an environment stall, so wall time is reported only alongside model time.
+
+One click task statement was corrected during the benchmark. The first statement for `runner-context-settings` omitted a requirement that a hidden test checks, so every condition failed that one test. Those nine runs were discarded and rerun with the corrected statement.
 
 ## Reproduce
 
-Requires the `claude` CLI, `git`, Python 3.9+, and whatever the target repository needs to run its tests (`uv` for click). Agent runs spend real API budget: this whole benchmark cost about $10 including discarded runs.
+Requires the `claude` CLI, `git`, Python 3.9+, and whatever the target repository needs to run its tests (`uv` for click). Agent runs spend real API budget: the click and SymPy benchmarks together cost about $22 including discarded runs and onboarding.
 
 ```bash
 git clone --depth 400 https://github.com/pallets/click /tmp/click

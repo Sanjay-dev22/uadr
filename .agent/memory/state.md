@@ -11,7 +11,7 @@ read_when: Start of every task.
 
 ## Active tasks
 
-- Open question: benchmark a large multi-module repository and vaguer tasks, where the framework is expected to help. Untested so far.
+- Open question: SymPy (large repo) showed no benefit either. Remaining untested case: symptom-only task descriptions that do not name the code. Consider slimming the framework toward the short-note style.
 
 ## Recent significant changes
 

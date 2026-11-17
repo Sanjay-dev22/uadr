@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from run_benchmark import analyse_transcript
+from run_benchmark import analyse_transcript, usage_summary
 
 ORDER = ["bare", "minimal"]
 
@@ -42,7 +42,17 @@ def main():
         record = json.loads(path.read_text())
         if record.get("interrupted") or not record.get("finished", True):
             continue
-        record.update(analyse_transcript(path.with_suffix(".transcript.jsonl")))  # refresh derived metrics
+        transcript = path.with_suffix(".transcript.jsonl")
+        final = {}
+        for line in transcript.read_text(encoding="utf-8").splitlines():
+            if '"type":"result"' in line.replace(" ", ""):
+                try:
+                    final = json.loads(line)
+                except json.JSONDecodeError:
+                    pass
+        if final:  # token totals from modelUsage, wall time as measured by the harness
+            record.update(usage_summary({**final, "wall_seconds": record["wall_seconds"]}))
+        record.update(analyse_transcript(transcript))  # refresh derived metrics, including turns
         records.append(record)
     onboarding = json.loads((work / "onboarding.json").read_text()) if (work / "onboarding.json").exists() else None
     present = {r["condition"] for r in records}
@@ -75,7 +85,8 @@ def main():
     row("Peak context (tokens)", lambda rs: fmt(mean(r["peak_context_tokens"] for r in rs)))
     row("Mean turns", lambda rs: f"{mean(r['turns'] for r in rs):.1f}")
     row("Mean tool calls", lambda rs: f"{mean(r['tool_calls'] for r in rs):.1f}")
-    row("Mean wall time (s)", lambda rs: f"{mean(r['wall_seconds'] for r in rs):.0f}")
+    row("Mean model (API) time (s)", lambda rs: f"{mean(r['api_seconds'] for r in rs):.0f}")
+    row("Mean wall time (s), includes environment stalls", lambda rs: f"{mean(r['wall_seconds'] for r in rs):.0f}")
     row("Ran tests itself", lambda rs: pct(r["ran_tests"] for r in rs))
     row("Added or changed tests", lambda rs: pct(r["added_tests"] for r in rs))
     row("Updated changelog", lambda rs: pct(r["updated_changelog"] for r in rs))

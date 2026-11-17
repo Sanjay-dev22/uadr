@@ -112,7 +112,7 @@ def run_agent(prompt: str, cwd: Path, model: str, transcript: Path, timeout: int
 
 def analyse_transcript(transcript: Path) -> dict:
     """Derive behaviour metrics from the event stream."""
-    tools, reads, commands = {}, [], []
+    tools, reads, commands, message_ids = {}, [], [], set()
     peak_context, first_context, final_text, seen = 0, 0, "", set()
     for line in transcript.read_text(encoding="utf-8").splitlines():
         try:
@@ -122,6 +122,7 @@ def analyse_transcript(transcript: Path) -> dict:
         if event.get("type") != "assistant":
             continue
         message = event.get("message", {})
+        message_ids.add(message.get("id"))
         usage = message.get("usage", {})
         context = (usage.get("input_tokens", 0) + usage.get("cache_read_input_tokens", 0)
                    + usage.get("cache_creation_input_tokens", 0))
@@ -145,7 +146,7 @@ def analyse_transcript(transcript: Path) -> dict:
         r"(\.agent/(?:workflows|skills|policies|memory|routing)/[\w./-]+|docs/(?:modules|architecture)/[\w-]+\.md)",
         joined + "\n" + "\n".join(reads)))
     return {
-        "tool_calls": sum(tools.values()), "tools": tools,
+        "turns": len(message_ids), "tool_calls": sum(tools.values()), "tools": tools,
         "files_read": len(set(reads)),
         "framework_reads": len(framework_docs),
         "read_workflow": any("/workflows/" in d for d in framework_docs),
@@ -288,11 +289,21 @@ def evaluate(workspace: Path, repo: Path, suite: dict, ref: dict, scratch: Path)
 
 
 def usage_summary(result: dict) -> dict:
-    usage = result.get("usage", {})
-    fresh, write, read = (usage.get("input_tokens", 0), usage.get("cache_creation_input_tokens", 0),
-                          usage.get("cache_read_input_tokens", 0))
+    """Token totals come from modelUsage (cumulative, matches the reported cost). The top-level `usage` field
+    can describe only part of a run, so it is used only when modelUsage is absent."""
+    models = result.get("modelUsage") or {}
+    if models:
+        fresh = sum(m.get("inputTokens", 0) for m in models.values())
+        write = sum(m.get("cacheCreationInputTokens", 0) for m in models.values())
+        read = sum(m.get("cacheReadInputTokens", 0) for m in models.values())
+        output = sum(m.get("outputTokens", 0) for m in models.values())
+    else:
+        usage = result.get("usage", {})
+        fresh, write, read = (usage.get("input_tokens", 0), usage.get("cache_creation_input_tokens", 0),
+                              usage.get("cache_read_input_tokens", 0))
+        output = usage.get("output_tokens", 0)
     return {"input_tokens_uncached": fresh, "cache_write_tokens": write, "cache_read_tokens": read,
-            "output_tokens": usage.get("output_tokens", 0), "total_input_tokens": fresh + write + read,
+            "output_tokens": output, "total_input_tokens": fresh + write + read,
             "cost_usd": result.get("total_cost_usd", 0), "turns": result.get("num_turns", 0),
             "api_seconds": round(result.get("duration_api_ms", 0) / 1000, 1),
             "wall_seconds": result.get("wall_seconds", 0),
