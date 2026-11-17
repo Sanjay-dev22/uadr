@@ -1,6 +1,6 @@
 ---
 name: documentation-generation
-description: Produce accurate, concise project documentation from source code using the repository's templates. Use when creating or updating module, architecture, API, or other docs.
+description: Write accurate project docs from source using the repository's templates. Use when creating or updating module, architecture, or API docs.
 ---
 # Documentation generation
 

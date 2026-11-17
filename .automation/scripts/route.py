@@ -28,6 +28,20 @@ def describe(rel: str, root: Path) -> str:
     return f"{rel}  (not written yet - skip; create it only if this task needs it)"
 
 
+def deliverables(root: Path, workflow: str) -> list[str]:
+    """Completion criteria and documentation updates, read from the workflow so they exist in one place."""
+    path = root / workflow
+    if not path.is_file():
+        return []
+    text = path.read_text(encoding="utf-8")
+    lines = []
+    for heading in ("Completion criteria", "Documentation updates"):
+        match = re.search(rf"^## {heading}\n\n(.*?)(?=\n## |\Z)", text, re.MULTILINE | re.DOTALL)
+        if match:
+            lines += [ln[2:] for ln in match.group(1).splitlines() if ln.startswith("- ")]
+    return lines
+
+
 def module_lines(paths: list[str], root: Path) -> list[str]:
     modules = lib.load_modules(root)
     if not paths:
@@ -94,6 +108,11 @@ def main(argv: list[str], root: Path = lib.ROOT) -> int:
         print("Skills (load one only when a step needs it):")
         for skill in route["skills"]:
             print(f"  - {lib.SKILLS_REL}/{skill}/SKILL.md")
+    must = deliverables(root, route["workflow"])
+    if must:
+        print("Deliver:")
+        for line in must:
+            print(f"  - {line}")
     print(f"Human approval: {route.get('approval', 'see .agent/policies/approvals.md')}")
     return 0
 

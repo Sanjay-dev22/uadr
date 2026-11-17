@@ -1,6 +1,6 @@
 ---
 name: codebase-navigation
-description: Locate the code relevant to a task quickly with targeted search instead of broad reading. Use when you need to find where behaviour lives, how a request flows, or an existing pattern to follow.
+description: Locate relevant code with targeted search instead of broad reading. Use when finding where behaviour lives or an existing pattern to follow.
 ---
 # Codebase navigation
 

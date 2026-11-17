@@ -1,6 +1,6 @@
 ---
 name: repository-exploration
-description: Build a fast, accurate map of an unfamiliar repository - languages, entry points, layout, build and test tooling. Use when entering a repository or area for the first time, or during onboarding.
+description: Map an unfamiliar repository: languages, entry points, layout, build and test tooling. Use when entering a repository or area for the first time.
 ---
 # Repository exploration
 

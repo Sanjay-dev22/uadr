@@ -18,6 +18,11 @@ def audit(root: Path = lib.ROOT) -> dict:
     tok = lambda rel: lib.file_tokens(root / rel) if (root / rel).is_file() else 0
 
     entry = tok("AGENTS.md")
+    # Platforms that support skills preload every skill's name and description so the agent can pick one.
+    skill_index = 0
+    for path in sorted((root / lib.SKILLS_REL).glob("*/SKILL.md")):
+        meta, _ = lib.parse_frontmatter(path.read_text(encoding="utf-8"))
+        skill_index += lib.est_tokens(f"{meta.get('name', '')}: {meta.get('description', '')}\n")
     always = sum(tok(rel) for rel in data.get("always", []))
     modules = lib.load_modules(root)
     module_tokens = [tok(m["doc"]) for m in modules if tok(m["doc"])]
@@ -41,7 +46,7 @@ def audit(root: Path = lib.ROOT) -> dict:
     project_docs = sum(tok(p) for p in md if p.startswith("docs/") and not p.startswith(lib.TEMPLATES_REL))
     worst_workflow = max((r["workflow"] for r in routes.values()), default=0)
     result = {
-        "entry_point": entry, "always": always, "routes_file": tok(lib.ROUTES_REL),
+        "entry_point": entry, "skill_index": skill_index, "always": always, "routes_file": tok(lib.ROUTES_REL),
         "bootstrap": entry + always + worst_workflow,
         "avg_module_doc": avg_module, "routes": routes,
         "everything": {"framework": framework, "project_docs": project_docs},
@@ -69,6 +74,7 @@ def render(r: dict) -> str:
         "Context audit (estimated tokens, ~4 chars/token)",
         "",
         f"Tier 0  AGENTS.md (always loaded)              {r['entry_point']:>6}",
+        f"        skill names + descriptions (preloaded) {r['skill_index']:>6}",
         f"Tier 1  memory/state.md (every task)           {r['always']:>6}",
         f"        bootstrap incl. largest workflow       {r['bootstrap']:>6}",
         f"        (routes.json if read whole instead of via the router: {r['routes_file']})",

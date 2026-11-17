@@ -4,13 +4,23 @@ read_when: Human adopters evaluating cost; agents only when changing budgets or 
 ---
 # Token efficiency
 
+## Read this first: measured results
+
+The figures further down are estimates of the documents an agent is routed to. Real agent runs tell a less favourable story, reported in full in `benchmark/README.md`:
+
+- On six real bug-fix and feature tasks in a 13,000-line repository, the framework increased cost per task by 24% to 42% with Sonnet 5.5 and by 86% with Haiku 5.5, compared with the same repository without it.
+- The always-loaded overhead, measured at the first model call, was about 1,700 tokens, not the roughly 550 of `AGENTS.md` alone. Platforms that support skills preload every skill's name and description.
+- That overhead is paid again on every model call of a task, and routing adds turns. On tasks an agent can solve in five turns with a single search, these costs outweigh anything progressive loading saves.
+
+Progressive loading limits how much documentation an agent reads. It does not make an agent cheaper than one that needs no documentation at all, and the benchmark has not yet tested repositories large enough for documentation to be necessary.
+
 ## Mechanism
 
 An agent's context is built in tiers, each loaded only when the previous one points to it:
 
 | Tier | What | Loaded | Cost (template, estimated) |
 | --- | --- | --- | --- |
-| 0 | `AGENTS.md` | Always, by the platform | ~540 tokens |
+| 0 | `AGENTS.md`, plus skill names and descriptions on skill-aware platforms | Always, by the platform | ~570 + ~490 estimated; ~1,700 measured |
 | 1 | `.agent/memory/state.md` and the router's output | Every task | ~100 to 250 tokens |
 | 2 | One workflow | Every task | ~430 to 610 tokens (onboarding: ~890) |
 | 3 | Module doc for the touched paths | Before changing code | ~300 to 800 tokens each, project dependent |
@@ -25,9 +35,9 @@ Five things keep this small:
 4. **Conditions are explicit.** Architecture, API, database, and decision docs are listed under "read only if" with the condition, so the default is not to read them.
 5. **Nothing is duplicated.** Platform adapters are pointers, the index is generated, and the `instructions` gate reports sentences repeated across instruction files.
 
-## Measured cost
+## Estimated document cost
 
-Measured with `python3 .automation/uadr.py audit` at framework version 1.0.0. Estimates use four characters per token; real tokenizer counts typically differ by up to 15 percent.
+Estimated with `python3 .automation/uadr.py audit` at framework version 1.0.0. Estimates use four characters per token; real tokenizer counts typically differ by up to 15 percent.
 
 | Measure | Template | Sample onboarded repository (two modules) |
 | --- | --- | --- |

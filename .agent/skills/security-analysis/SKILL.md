@@ -1,6 +1,6 @@
 ---
 name: security-analysis
-description: Find and assess security weaknesses in code - input handling, authn/authz, secrets, data exposure, dependencies. Use for security reviews, API work, and reviewing changes that touch trust boundaries.
+description: Find and assess security weaknesses: input handling, authn/authz, secrets, data exposure. Use for security reviews and changes touching trust boundaries.
 ---
 # Security analysis
 

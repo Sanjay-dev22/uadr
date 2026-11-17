@@ -8,7 +8,7 @@ It is not a boilerplate application. It adds three things beside your code: a sh
 ## How it works
 
 ```text
-AGENTS.md (about 540 tokens, the only always-loaded file)
+AGENTS.md (about 570 tokens; with preloaded skill descriptions, about 1,700 measured)
    -> uadr.py route "<task>" --path <file>
         -> one workflow            .agent/workflows/
         -> the module doc(s)       docs/modules/        for the paths being touched
@@ -17,7 +17,16 @@ AGENTS.md (about 540 tokens, the only always-loaded file)
    -> implement -> uadr.py run all + uadr.py check -> update docs and memory -> completion report
 ```
 
-A typical task loads about 1,300 to 1,600 tokens of framework and documentation context before reading code, which is around 5% of the full corpus. See [token efficiency](.agent/guide/token-efficiency.md).
+The docs an agent is routed to for a typical task are an estimated 1,300 to 1,600 tokens, about 5% of the framework and documentation corpus. See [token efficiency](.agent/guide/token-efficiency.md).
+
+## Measured results
+
+The framework was benchmarked with real agent runs on real upstream bug fixes, judged by hidden tests: 108 runs on [pallets/click](https://github.com/pallets/click) with two models. Read [benchmark/README.md](benchmark/README.md) before adopting. In short:
+
+- On small, well-specified tasks in a small repository, the framework **cost 24% to 86% more** per task than the bare repository and was never cheaper. It did not save tokens.
+- Every condition resolved every task, so no correctness benefit was shown or could have been.
+- A seven-line hand-written `AGENTS.md` produced the same test and changelog discipline at lower cost.
+- Larger repositories, vaguer tasks, multi-session work, and governance behaviour, which are what the framework is designed for, are **not yet measured**.
 
 ## Quick start
 
@@ -58,6 +67,7 @@ Full instructions: [adoption guide](.agent/guide/adoption.md).
 
 ## Documentation
 
+- [Benchmark: method, results, limits](benchmark/README.md)
 - [Framework architecture and diagram](.agent/guide/architecture.md)
 - [Adoption and usage guide](.agent/guide/adoption.md)
 - [Token efficiency and measurements](.agent/guide/token-efficiency.md)

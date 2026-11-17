@@ -1,6 +1,6 @@
 ---
 name: architecture-discovery
-description: Derive the real architecture of a system from its source - components, boundaries, dependencies, data flow, integrations. Use when writing or verifying architecture docs, or before an architecture change.
+description: Derive the real architecture from source: components, boundaries, dependencies, data flow. Use when writing architecture docs or before an architecture change.
 ---
 # Architecture discovery
 

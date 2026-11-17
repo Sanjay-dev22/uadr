@@ -1,6 +1,6 @@
 ---
 name: code-quality-review
-description: Evaluate code or a diff for correctness, clarity, maintainability, and convention adherence. Use for pull request review, self-review before completion, and after refactoring.
+description: Evaluate code or a diff for correctness, clarity, and conventions. Use for pull request review and self-review before completion.
 ---
 # Code quality review
 
