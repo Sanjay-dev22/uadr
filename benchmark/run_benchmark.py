@@ -55,16 +55,35 @@ def export(repo: Path, commit: str, dest: Path) -> None:
     subprocess.run(["tar", "-x", "-C", str(dest)], input=archive, check=True)
 
 
-def commit_all(workspace: Path, message: str) -> None:
+def commit_all(workspace: Path, message: str, tag: str = "") -> None:
+    """Fresh single-commit repository. A tag is added for projects that derive their version from git."""
     sh(["git", "init", "-q", "-b", "main"], cwd=workspace)
     sh(["git", "add", "-A"], cwd=workspace)
     sh(["git", "-c", "user.name=bench", "-c", "user.email=bench@example.com", "commit", "-qm", message], cwd=workspace)
+    if tag:
+        sh(["git", "tag", tag], cwd=workspace)
+
+
+PATH_PREPEND = ""  # set from --path-prepend: a toolchain directory given to every condition and the evaluator
+
+
+def tool_env() -> dict:
+    env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+    if PATH_PREPEND:
+        env["PATH"] = f"{PATH_PREPEND}:{env['PATH']}"
+    return env
 
 
 def agent_env() -> dict:
-    env = dict(os.environ)  # identical for every condition: whatever toolchain the machine has
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
-    return env
+    return tool_env()  # identical for every condition
+
+
+def is_test_path(suite: dict, path: str) -> bool:
+    return bool(re.search(suite.get("test_pattern", "^" + re.escape(suite.get("tests", "tests")) + "/"), path))
+
+
+def is_src_path(suite: dict, path: str) -> bool:
+    return path.startswith(suite["src"] + "/") and not is_test_path(suite, path)
 
 
 def run_agent(prompt: str, cwd: Path, model: str, transcript: Path, timeout: int) -> dict:
@@ -144,9 +163,8 @@ def analyse_transcript(transcript: Path) -> dict:
 
 def run_pytest(workdir: Path, suite: dict, targets: list[str]) -> dict[str, str]:
     """Run the project's own test command and return {test id: outcome}."""
-    env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
     proc = subprocess.run([*suite["test_cmd"], "-q", "-p", "no:cacheprovider", "-rA", "--no-header", *targets],
-                          cwd=workdir, capture_output=True, text=True, timeout=1800, env=env)
+                          cwd=workdir, capture_output=True, text=True, timeout=3600, env=tool_env())
     outcomes = {}
     for line in proc.stdout.splitlines():
         m = re.match(r"(PASSED|FAILED|ERROR)\s+(\S+)", line)
@@ -161,24 +179,28 @@ def reference(repo: Path, suite: dict, task: dict, cache: Path) -> dict:
     if path.exists():
         return json.loads(path.read_text())
     commit = git(repo, "rev-parse", task["commit"]).strip()
-    tests = suite["tests"]
     test_files = [f for f in git(repo, "show", "--name-only", "--format=", commit).split()
-                  if f.startswith(tests + "/") and f.endswith(".py")]
+                  if is_test_path(suite, f) and f.endswith(".py")]
+    # Projects whose whole suite is too slow to run per evaluation are scored on the changed test files only.
+    scope = test_files if suite.get("eval_scope") == "changed_test_files" else [suite["tests"]]
     fixed, parent = cache / "tmp-fixed", cache / "tmp-parent"
     export(repo, commit, fixed)
     export(repo, commit + "^", parent)
     for f in test_files:
         shutil.copy2(fixed / f, parent / f)
-    after = run_pytest(fixed, suite, [tests])
+    if suite.get("git_tag"):
+        commit_all(fixed, "fixed", suite["git_tag"])
+        commit_all(parent, "parent", suite["git_tag"])
+    after = run_pytest(fixed, suite, scope)
     before = run_pytest(parent, suite, test_files)
     f2p = sorted(t for t in before if after.get(t) == "PASSED" and before[t] != "PASSED")
     f2p += sorted(t for t, o in after.items() if o == "PASSED" and t not in before
                   and t.split("::")[0] in test_files)
     ref_diff = git(repo, "show", "--numstat", "--format=", commit).splitlines()
     src_lines = sum(int(r.split("\t")[0]) + int(r.split("\t")[1]) for r in ref_diff
-                    if r.split("\t")[2].startswith(suite["src"] + "/") and r.split("\t")[0] != "-")
+                    if is_src_path(suite, r.split("\t")[2]) and r.split("\t")[0] != "-")
     data = {"commit": commit, "parent": git(repo, "rev-parse", commit + "^").strip(), "test_files": test_files,
-            "fail_to_pass": sorted(set(f2p)), "passing_at_fix": sorted(t for t, o in after.items() if o == "PASSED"),
+            "eval_targets": scope, "fail_to_pass": sorted(set(f2p)), "passing_at_fix": sorted(t for t, o in after.items() if o == "PASSED"),
             "reference_src_lines": src_lines}
     shutil.rmtree(fixed)
     shutil.rmtree(parent)
@@ -194,7 +216,18 @@ def lint_scope_markdown(workspace: Path) -> list[str]:
     return [p for p in lib.markdown_files(workspace) if any(lib.glob_match(g, p) for g in cfg["docs"]["lint_paths"])]
 
 
+def strip_agent_files(workspace: Path, suite: dict) -> None:
+    """Remove the project's own agent instruction files so every condition starts from the same code."""
+    for rel in suite.get("strip_files", []):
+        path = workspace / rel
+        if path.is_dir():
+            shutil.rmtree(path)
+        elif path.exists():
+            path.unlink()
+
+
 def apply_condition(workspace: Path, condition: str, suite: dict, overlay: Path) -> None:
+    strip_agent_files(workspace, suite)
     if condition == "minimal":
         (workspace / "AGENTS.md").write_text(suite["minimal_agents_md"], encoding="utf-8")
         (workspace / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
@@ -218,8 +251,8 @@ def change_metrics(workspace: Path, suite: dict) -> dict:
     rows = [r.split("\t") for r in git(workspace, "diff", "--numstat", "HEAD").splitlines() if r.count("\t") == 2]
     files = [r[2] for r in rows]
     lines = lambda pred: sum(int(r[0]) + int(r[1]) for r in rows if r[0] != "-" and pred(r[2]))
-    is_src = lambda p: p.startswith(suite["src"] + "/")
-    is_test = lambda p: p.startswith(suite["tests"] + "/")
+    is_src = lambda p: is_src_path(suite, p)
+    is_test = lambda p: is_test_path(suite, p)
     is_fw = lambda p: p.startswith((".agent/", ".automation/", "docs/modules/", "docs/index.md", "AGENTS.md"))
     return {
         "files_changed": len(files), "src_files_changed": sum(map(is_src, files)),
@@ -243,7 +276,9 @@ def evaluate(workspace: Path, repo: Path, suite: dict, ref: dict, scratch: Path)
                                  capture_output=True, check=True).stdout
         (scratch / f).parent.mkdir(parents=True, exist_ok=True)
         (scratch / f).write_bytes(content)
-    outcomes = run_pytest(scratch, suite, [suite["tests"]])
+    if suite.get("git_tag"):
+        commit_all(scratch, "evaluation", suite["git_tag"])
+    outcomes = run_pytest(scratch, suite, ref.get("eval_targets", [suite["tests"]]))
     shutil.rmtree(scratch)
     f2p_failed = [t for t in ref["fail_to_pass"] if outcomes.get(t) != "PASSED"]
     regressions = [t for t in ref["passing_at_fix"] if t not in ref["fail_to_pass"] and outcomes.get(t) != "PASSED"]
@@ -274,7 +309,7 @@ def run_one(job: dict) -> dict:
     workspace = work / "workspaces" / run_id
     export(repo, ref["parent"], workspace)
     apply_condition(workspace, job["condition"], suite, work / f"{job['condition']}-overlay")
-    commit_all(workspace, "benchmark baseline")
+    commit_all(workspace, "benchmark baseline", suite.get("git_tag", ""))
     transcript = out.with_suffix(".transcript.jsonl")
     result = run_agent(TASK_PROMPT.format(statement=task["statement"]), workspace, job["model"],
                        transcript, job["timeout"])
@@ -293,7 +328,8 @@ def cmd_onboard(args, suite) -> None:
     repo, work = Path(args.repo).resolve(), Path(args.work).resolve()
     workspace = work / "onboarding"
     export(repo, suite["onboard_commit"], workspace)
-    commit_all(workspace, "project at onboarding commit")
+    strip_agent_files(workspace, suite)
+    commit_all(workspace, "project at onboarding commit", suite.get("git_tag", ""))
     adopt = sh([sys.executable, str(FRAMEWORK / ".automation/uadr.py"), "adopt", "--target", str(workspace)])
     print(adopt.stdout[-600:])
     result = run_agent(ONBOARD_PROMPT, workspace, args.model, work / "onboarding.transcript.jsonl",
@@ -360,7 +396,10 @@ def main() -> None:
     ap.add_argument("--jobs", type=int, default=3)
     ap.add_argument("--only", help="comma-separated task ids")
     ap.add_argument("--timeout", type=int, default=2400, help="seconds per agent run")
+    ap.add_argument("--path-prepend", default="", help="directory put first on PATH for agents and the evaluator")
     args = ap.parse_args()
+    global PATH_PREPEND
+    PATH_PREPEND = args.path_prepend
     suite = json.loads(Path(args.suite).read_text())
     (cmd_onboard if args.command == "onboard" else cmd_run)(args, suite)
 

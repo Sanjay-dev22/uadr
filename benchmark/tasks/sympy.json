@@ -1,0 +1,62 @@
+{
+  "repo": "https://github.com/sympy/sympy",
+  "src": "sympy",
+  "tests": "sympy",
+  "test_pattern": "/tests/",
+  "test_cmd": ["python", "-m", "pytest"],
+  "eval_scope": "changed_test_files",
+  "git_tag": "sympy-1.15.0",
+  "strip_files": ["AGENTS.md", "CLAUDE.md"],
+  "onboard_commit": "85d3998a45",
+  "minimal_agents_md": "# AGENTS.md\n\nSymPy is a Python library for symbolic mathematics.\n\n- Source: `sympy/<subpackage>/`. Tests live beside the code in `sympy/<subpackage>/tests/test_*.py`.\n- Run tests: `python -m pytest sympy/<subpackage>/tests/test_<file>.py -q` (pytest is installed). The full suite is slow; run the relevant files.\n- Every behaviour change needs a regression test in the matching test file.\n",
+  "tasks": [
+    {
+      "id": "quaternion-180-rotation",
+      "type": "bugfix",
+      "commit": "181b21626",
+      "statement": "Converting a rotation matrix for a 180-degree rotation to a quaternion gives a wrong result.\n\n```python\nfrom sympy import Matrix, Quaternion\nRx = Matrix([[1, 0, 0], [0, -1, 0], [0, 0, -1]])\nQuaternion.from_rotation_matrix(Rx)   # expected Quaternion(0, 1, 0, 0)\n```\n\nExpected: the 180-degree rotations about the x, y and z axes convert to `Quaternion(0, 1, 0, 0)`, `Quaternion(0, 0, 1, 0)` and `Quaternion(0, 0, 0, 1)`. More generally, for a unit quaternion `q` with zero scalar part, such as `Quaternion(0, sqrt(2)/2, sqrt(2)/2, 0)` or `Quaternion(0, sqrt(3)/3, sqrt(3)/3, sqrt(3)/3)`, `Quaternion.from_rotation_matrix(q.to_rotation_matrix())` must have norm exactly 1 and must produce the same rotation matrix again. Results for other rotations must not change."
+    },
+    {
+      "id": "subs-derivative-free-symbols",
+      "type": "bugfix",
+      "commit": "d41110f35",
+      "statement": "Repeated differentiation of an undefined function with composite arguments introduces free symbols that were never in the expression.\n\n```python\nfrom sympy import symbols, Function\nx, y = symbols('x y')\nf = Function('f')\nf(x + y, x*y).diff(y).diff(x).free_symbols   # contains extra symbols besides x and y\n```\n\nExpected: the result's `free_symbols` is exactly `{x, y}`. The same must hold for other composite arguments and differentiation orders, for example `f(x**2 + y, x*y + 1)` differentiated by `y` then `x`, `f(x + y, x + y)`, and `f(x + y, x*y, x*z + y)` (free symbols `{x, y, z}`). In addition, `Subs(x + Symbol('_0'), x, 0)` must not compare equal to `Subs(2*x, x, 0)`. Existing `Subs` equalities such as `Subs(f(x), x, 0) == Subs(f(y), y, 0)` must keep working."
+    },
+    {
+      "id": "str-duplicate-parentheses",
+      "type": "bugfix",
+      "commit": "4bfd040dc",
+      "statement": "`str()` of an unevaluated product prints doubled parentheses around a denominator.\n\n```python\nfrom sympy import Mul, Pow, symbols\nx, y, z = symbols('x y z')\nd = Pow(x*y, -1, evaluate=False)\nstr(Mul(2, d, evaluate=False))   # '2/((x*y))', expected '2/(x*y)'\n```\n\nExpected string output:\n\n- `Mul(-2, z, d, evaluate=False)` gives `'-2*z/(x*y)'`\n- with `d = Pow(Mul(x, x, evaluate=False), -1, evaluate=False)`: `'2/(x*x)'` and `'-2*z/(x*x)'`\n- with `d = Pow(x**y, -1, evaluate=False)`: `'2/(x**y)'`\n- `Mul(2, Pow(x*y, -1, evaluate=False), Pow(z, -1, evaluate=False), evaluate=False)` gives `'2/(z*(x*y))'`\n- a denominator that is itself a reciprocal or a fraction keeps one pair of parentheses: `Mul(1, Pow(1/y, -1, evaluate=False), evaluate=False)` gives `'1/(1/y)'`, with `1/sqrt(y)` it gives `'1/(1/sqrt(y))'`, with `Rational(2, 3)` it gives `'1/(2/3)'`, and with coefficient `-2` it gives `'-2/(2/3)'`. Parsing each of these strings back with `S()` must give an expression equal to the original.\n\nNothing elsewhere in the library that depends on the string printer may break."
+    },
+    {
+      "id": "mod-negative-ratio",
+      "type": "bugfix",
+      "commit": "3eba337be",
+      "statement": "`Mod` evaluates to a wrong value when the ratio of its arguments is a known negative number but the sign of the modulus is unknown.\n\n```python\nfrom sympy import Mod, symbols\nx = symbols('x')\nMod(-x, 2*x)   # wrong; expected x\n```\n\nThe ratio must be reduced with floor, not truncation toward zero. Expected: `Mod(-x, 2*x) == x`, `Mod(x, -2*x) == -x`, `Mod(-x, 3*x) == 2*x`, `Mod(-x**2, 2*x**2) == x**2`. With integer symbols `a`, `b` and `t = a*x + b`, `Mod(-t**2, 2*t**2) == t**2`, and substituting `a=0, b=1` into that result gives `1`, the same as building the `Mod` from the substituted arguments. Existing `Mod` behaviour must not change."
+    },
+    {
+      "id": "convolution-empty-input",
+      "type": "bugfix",
+      "commit": "de06b948b",
+      "statement": "The convolution functions fail when one of the sequences is empty.\n\n```python\nfrom sympy.discrete.convolutions import convolution\nconvolution([], [1, 2])   # raises; expected []\n```\n\nExpected: the convolution of an empty sequence with anything is empty, in either argument order, for `convolution`, `convolution_fft`, `convolution_int`, and with a `prime` argument for `convolution` and `convolution_ntt` (for example `prime=19*2**10 + 1`). This holds for the other sequence being `[]`, `[1]`, `[1, 2]` or `[1, 2, 3]`, for rational entries, and for `dyadic=True` and `subset=True`. With `cycle=3`, `convolution([], [1, 2], cycle=3)` is `[0, 0, 0]`. Results for non-empty inputs must not change."
+    },
+    {
+      "id": "interval-times-infinity",
+      "type": "bugfix",
+      "commit": "020489d34",
+      "statement": "Multiplying a `SetExpr` of an interval by infinity is handled inconsistently: some intervals give a single infinity even though they contain zero or mixed signs, and others stay unevaluated.\n\nExpected: the product is taken pointwise. Every negative element times `oo` is `-oo`, zero times `oo` is `nan`, and every positive element times `oo` is `oo`, so the result is a `SetExpr` of a `FiniteSet` holding whichever of `-oo`, `nan`, `oo` apply:\n\n- `SetExpr(Interval(-2, -1)) * oo == SetExpr(FiniteSet(-oo))`, and the same for `Interval.Ropen(-1, 0)` and `Interval(-oo, -1)`\n- `Interval(-1, 0)` gives `FiniteSet(-oo, nan)`\n- `Interval(-1, 1)`, `Interval.open(-1, 1)` and `Interval(-oo, oo)` give `FiniteSet(-oo, nan, oo)`\n- `Interval(0, 1)` gives `FiniteSet(nan, oo)`\n- `Interval.Lopen(0, 1)`, `Interval(1, 2)` and `Interval(1, oo)` give `FiniteSet(oo)`\n\nMultiplying by `-oo` gives the negated set. The result is the same with the operands in either order, and whether infinity is passed as a number or as `SetExpr(FiniteSet(oo))`."
+    },
+    {
+      "id": "reshape-validation",
+      "type": "bugfix",
+      "commit": "7282d9a5e",
+      "statement": "`sympy.utilities.iterables.reshape` mishandles templates that are empty or contain zero or negative counts.\n\nExpected behaviour, with `seq = list(range(1, 9))` in the first item and `seq = [1, 2, 3, 4]` afterwards:\n\n- Zero counts at the top level are ignored: `reshape(seq, (0, 4)) == reshape(seq, (4, 0)) == reshape(seq, (4,))`.\n- A template that consumes no elements is an error: `reshape(s, how)` raises `ValueError` for `how` in `()`, `[]`, `((),)`, `([],)`, `(0,)`, `(1, -1)`, for both `s = (1,)` and `s = ()`.\n- A nested zero count or empty container produces an empty container of that type in each group: `reshape(seq, ([0], 4)) == [([], 1, 2, 3, 4)]`, `reshape(seq, ((0,), 4)) == [((), 1, 2, 3, 4)]`, `reshape(seq, ([0], (0,), 4)) == [([], (), 1, 2, 3, 4)]`, `reshape(seq, ([], (), 4)) == [([], (), 1, 2, 3, 4)]`, `reshape(seq, (1, [0, (0,)], 1)) == [(1, [()], 2), (3, [()], 4)]`, `reshape(tuple(seq), ([0], 2)) == (([], 1, 2), ([], 3, 4))`, and `reshape([], ([0], 4)) == []`.\n- Any negative count, at any depth, raises `ValueError` for both a non-empty and an empty sequence: `(-1, 5)`, `(2, -1, 3)`, `(0, -1, 5)`, `([-1], 5)`.\n\nExisting documented behaviour of `reshape` must not change."
+    },
+    {
+      "id": "solve-no-symbols",
+      "type": "bugfix",
+      "commit": "954a05a45",
+      "statement": "`solve` crashes with an `IndexError` when given a system of equations that contains no symbols to solve for, and this also breaks an integral.\n\n```python\nfrom sympy import solve, log, integrate, symbols\nx = symbols('x')\nsolve([log(2) + log(3)])                    # IndexError; expected []\nintegrate(2**(2 + 3*x)*3**(5 + 7*x), x)     # fails; expected a closed form\n```\n\nExpected:\n\n- `solve([log(2) + log(3)]) == []` and `solve([log(2) + log(3)], exclude=(x,)) == []` (an equation that is a non-zero constant has no solution)\n- `solve([log(2) + log(3) - log(6)]) == {}` (an equation that is identically zero is satisfied trivially)\n- `solve([x - 1, cos(1)**2 + sin(1)**2 - 1], x) == {x: 1}` and `solve([x - 1, cos(1)**2 + sin(1)**2 - 2], x) == []`\n- `integrate(2**(2 + 3*x)*3**(5 + 7*x), x)` and `heurisch` of the same integrand both return `972*2**(3*x)*3**(7*x)/(3*log(2) + 7*log(3))`"
+    }
+  ]
+}

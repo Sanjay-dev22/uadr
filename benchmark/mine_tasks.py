@@ -5,7 +5,7 @@ A commit qualifies when it changes source and tests, and the tests it adds or ch
 FAIL on the parent's source but PASS on the commit's source. Those tests become the hidden
 acceptance tests; the agent is given the parent checkout and a problem statement only.
 
-Usage: mine_tasks.py <repo> --src src/click --tests tests --python <venv python> [--limit 40]
+Usage: mine_tasks.py <repo> --src src/click --test-pattern ^tests/ --python <venv python> [--limit 40]
 """
 import argparse
 import json
@@ -26,11 +26,21 @@ def export(repo: Path, commit: str, dest: Path) -> None:
     subprocess.run(["tar", "-x", "-C", str(dest)], input=archive, check=True)
 
 
+def tag_tree(tree: Path, tag: str) -> None:
+    """Some projects derive their version from git metadata; give an exported tree a tagged commit."""
+    if not tag:
+        return
+    for cmd in (["init", "-q"], ["add", "-A"],
+                ["-c", "user.name=bench", "-c", "user.email=bench@example.com", "commit", "-qm", "tree"],
+                ["tag", tag]):
+        subprocess.run(["git", "-C", str(tree), *cmd], check=True, capture_output=True)
+
+
 def run_tests(workdir: Path, python: str, pythonpath: str, files: list[str]) -> dict[str, str]:
     """Return {test id: outcome} for the given test files."""
     proc = subprocess.run(
         [python, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-rA", "--no-header", *files],
-        cwd=workdir, capture_output=True, text=True, timeout=900,
+        cwd=workdir, capture_output=True, text=True, timeout=1200,
         env={"PATH": "/usr/bin:/bin", "PYTHONPATH": pythonpath, "PYTHONDONTWRITEBYTECODE": "1", "HOME": "/tmp"})
     outcomes = {}
     for line in proc.stdout.splitlines():
@@ -46,7 +56,10 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("repo")
     ap.add_argument("--src", required=True)
-    ap.add_argument("--tests", required=True)
+    ap.add_argument("--test-pattern", required=True, help="regex identifying test files, e.g. ^tests/ or /tests/")
+    ap.add_argument("--git-tag", default="", help="tag to create in exported trees, for projects versioned from git")
+    ap.add_argument("--min-src-lines", type=int, default=1)
+    ap.add_argument("--max-test-files", type=int, default=3)
     ap.add_argument("--python", required=True)
     ap.add_argument("--pythonpath", default="src")
     ap.add_argument("--max-src-lines", type=int, default=60)
@@ -66,13 +79,15 @@ def main():
             if len(parts) != 3 or parts[0] == "-":
                 continue
             lines, path = int(parts[0]) + int(parts[1]), parts[2]
-            if path.startswith(args.src + "/"):
+            if re.search(args.test_pattern, path):
+                if path.endswith(".py"):
+                    tests += lines
+                    test_files.append(path)
+            elif path.startswith(args.src + "/") and path.endswith(".py"):
                 src += lines
                 src_files.append(path)
-            elif path.startswith(args.tests + "/") and path.endswith(".py"):
-                tests += lines
-                test_files.append(path)
-        if 0 < src <= args.max_src_lines and tests > 0 and len(src_files) <= 3:
+        if (args.min_src_lines <= src <= args.max_src_lines and tests > 0 and len(src_files) <= 4
+                and len(test_files) <= args.max_test_files):
             candidates.append({"commit": sha, "src_lines": src, "src_files": src_files, "test_files": test_files})
         if len(candidates) >= args.limit:
             break
@@ -91,10 +106,13 @@ def main():
             for f in files:  # hidden tests overlaid on the unfixed source
                 (parent / f).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(fixed / f, parent / f)
+            tag_tree(parent, args.git_tag)
+            tag_tree(fixed, args.git_tag)
             try:
                 before = run_tests(parent, args.python, args.pythonpath, files)
                 after = run_tests(fixed, args.python, args.pythonpath, files)
             except subprocess.TimeoutExpired:
+                print(f"  {sha[:9]} timed out")
                 continue
         f2p = sorted(t for t, o in after.items() if o == "PASSED" and before.get(t) != "PASSED")
         p2p = sorted(t for t, o in after.items() if o == "PASSED" and before.get(t) == "PASSED")
