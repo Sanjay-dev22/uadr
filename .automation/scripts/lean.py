@@ -100,9 +100,9 @@ def map_entries(root: Path, inventory: dict) -> list[str]:
     return [line for _, line in entries[:MAX_ENTRIES]]
 
 
-def render(root: Path, name: str, commands: dict[str, str], inventory: dict) -> str:
+def render(root: Path, name: str, commands: dict[str, str], inventory: dict, max_entries: int = MAX_ENTRIES) -> str:
     languages = ", ".join(list(inventory["languages"])[:3]) or "unknown language"
-    layout = map_entries(root, inventory)
+    layout = map_entries(root, inventory)[:max_entries] if max_entries > 0 else []
     tests = inventory["tests"]["roots"]
     test_hint = f" Tests: {', '.join(f'`{r}/`' for r in list(tests)[:3])}." if tests else ""
     changelog = next((f for f in sorted(p.name for p in root.iterdir() if p.is_file()) if CHANGELOG.match(f)), "")
@@ -132,6 +132,7 @@ def main(argv: list[str], root: Path = lib.ROOT) -> int:
     ap.add_argument("--name", help="project name (default: directory name)")
     ap.add_argument("--command", action="append", default=[], metavar="KIND=CMD",
                     help="verified command, e.g. test='python -m pytest'. Detected commands are used otherwise")
+    ap.add_argument("--max-entries", type=int, default=MAX_ENTRIES, help="map size; 0 leaves the map out")
     ap.add_argument("--stdout", action="store_true", help="print instead of writing AGENTS.md")
     ap.add_argument("--force", action="store_true", help="overwrite an existing AGENTS.md")
     args = ap.parse_args(argv)
@@ -141,7 +142,7 @@ def main(argv: list[str], root: Path = lib.ROOT) -> int:
     for item in args.command:
         kind, _, cmd = item.partition("=")
         commands[kind] = cmd
-    text = render(target, args.name or target.name, commands, inventory)
+    text = render(target, args.name or target.name, commands, inventory, args.max_entries)
     if args.stdout:
         print(text)
         return 0

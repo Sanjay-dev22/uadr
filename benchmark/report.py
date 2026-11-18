@@ -57,7 +57,7 @@ def main():
     onboarding = json.loads((work / "onboarding.json").read_text()) if (work / "onboarding.json").exists() else None
     present = {r["condition"] for r in records}
     conditions = [c for c in ORDER if c in present] + sorted(present - set(ORDER))
-    is_fw = lambda c: c.startswith("uadr") or c == "lean"
+    is_fw = lambda c: c.startswith("uadr") or c.startswith("lean")
     frameworks = [c for c in conditions if is_fw(c)]
     tasks = [t["id"] for t in suite["tasks"] if any(r["task"] == t["id"] for r in records)]
     by = lambda c, t=None: [r for r in records if r["condition"] == c and (t is None or r["task"] == t)]

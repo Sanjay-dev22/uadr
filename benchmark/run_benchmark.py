@@ -64,6 +64,7 @@ def commit_all(workspace: Path, message: str, tag: str = "") -> None:
         sh(["git", "tag", tag], cwd=workspace)
 
 
+LEAN_VARIANTS = {"lean": [], "lean-nomap": ["--max-entries", "0"], "lean-short": ["--max-entries", "8"]}
 PATH_PREPEND = ""  # set from --path-prepend: a toolchain directory given to every condition and the evaluator
 
 
@@ -232,9 +233,9 @@ def apply_condition(workspace: Path, condition: str, suite: dict, overlay: Path)
     if condition == "minimal":
         (workspace / "AGENTS.md").write_text(suite["minimal_agents_md"], encoding="utf-8")
         (workspace / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
-    elif condition == "lean":
+    elif condition in LEAN_VARIANTS:
         args = [sys.executable, str(FRAMEWORK / ".automation/uadr.py"), "lean", "--target", str(workspace),
-                "--name", suite["repo"].rstrip("/").split("/")[-1]]
+                "--name", suite["repo"].rstrip("/").split("/")[-1], *LEAN_VARIANTS[condition]]
         for kind, cmd in suite.get("lean_commands", {}).items():
             args += ["--command", f"{kind}={cmd}"]
         sh(args)
