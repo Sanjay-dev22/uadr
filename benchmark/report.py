@@ -57,7 +57,8 @@ def main():
     onboarding = json.loads((work / "onboarding.json").read_text()) if (work / "onboarding.json").exists() else None
     present = {r["condition"] for r in records}
     conditions = [c for c in ORDER if c in present] + sorted(present - set(ORDER))
-    frameworks = [c for c in conditions if c.startswith("uadr")]
+    is_fw = lambda c: c.startswith("uadr") or c == "lean"
+    frameworks = [c for c in conditions if is_fw(c)]
     tasks = [t["id"] for t in suite["tasks"] if any(r["task"] == t["id"] for r in records)]
     by = lambda c, t=None: [r for r in records if r["condition"] == c and (t is None or r["task"] == t)]
     model = records[0]["model"] if records else "?"
@@ -117,7 +118,7 @@ def main():
         out += ["| Framework | Compared with | Cost | Total input tokens | Output tokens | Turns | Tasks where framework was cheaper |",
                 "| --- | --- | ---: | ---: | ---: | ---: | ---: |"]
         for fw in frameworks:
-            for base in [c for c in conditions if c != fw and not (c.startswith("uadr") and c > fw)]:
+            for base in [c for c in conditions if c != fw and not (is_fw(c) and conditions.index(c) > conditions.index(fw))]:
                 def ratio(key):
                     pairs = [(mean(r[key] for r in by(fw, t)), mean(r[key] for r in by(base, t))) for t in tasks
                              if by(fw, t) and by(base, t)]
@@ -135,7 +136,7 @@ def main():
                 f"{onboarding['wall_seconds'] / 60:.0f} minutes. Existing project files modified: "
                 f"{len(onboarding['existing_files_modified'])}. `uadr.py check` exit code afterwards: {onboarding['check_exit']}."]
         for fw in frameworks:
-            for base in [c for c in conditions if not c.startswith("uadr")]:
+            for base in [c for c in conditions if not is_fw(c)]:
                 saving = mean(r["cost_usd"] for r in by(base)) - mean(r["cost_usd"] for r in by(fw))
                 if saving > 0:
                     out.append(f"\n`{fw}` against `{base}`: saves ${saving:.3f} per task on average, so onboarding "
