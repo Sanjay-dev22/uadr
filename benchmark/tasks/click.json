@@ -1,0 +1,57 @@
+{
+  "repo": "https://github.com/pallets/click",
+  "src": "src/click",
+  "tests": "tests",
+  "test_cmd": [
+    "uv",
+    "run",
+    "--locked",
+    "--no-default-groups",
+    "--group",
+    "tests",
+    "pytest"
+  ],
+  "onboard_commit": "7c99ebe23",
+  "minimal_agents_md": "# AGENTS.md\n\nClick is a Python package for building command line interfaces.\n\n- Source: `src/click/`. Tests: `tests/` (pytest). Docs: `docs/`. Changelog: `CHANGES.md` or `CHANGES.rst`.\n- The project uses uv. Run tests: `uv run --group tests pytest -q`.\n- Every behaviour change needs a test and a changelog entry.\n",
+  "tasks": [
+    {
+      "id": "write-usage-empty-args",
+      "type": "bugfix",
+      "commit": "0551bf535",
+      "statement": "`HelpFormatter.write_usage` produces only a blank line when it is called without arguments text.\n\nReproduce:\n\n```python\nimport click\nf = click.HelpFormatter()\nf.write_usage(\"Program\", \"\")\nprint(repr(f.getvalue()))   # '\\n'\n```\n\nExpected: the usage prefix and the program name are written even when no args follow, on exactly one line and with no trailing space: `'Usage: Program\\n'`. A custom prefix is kept (`prefix=\"Run: \"` gives `'Run: Program\\n'`). This must also hold when the program name is long relative to the formatter width (for example `width=20` and `\"VeryLongProgramName\"` gives exactly `'Usage: VeryLongProgramName\\n'`). Output with non-empty args must not change (`'Usage: Program [OPTIONS]\\n'`)."
+    },
+    {
+      "id": "choice-completion-normalize",
+      "type": "bugfix",
+      "commit": "32ae2acd3",
+      "statement": "Shell completion for `click.Choice` offers the raw `str()` of each choice instead of the normalized value that the option actually accepts. With an `Enum` as choices, completion suggests `MyEnum.foo` instead of `foo`, which is not a valid value on the command line.\n\nExpected: completion candidates for a `Choice` are the normalized choice values, produced the same way as when a value is validated. Consequently, with `case_sensitive=False` the suggested values are the lower-cased normalized ones (choices `[\"Au\", \"al\"]` and incomplete text `\"a\"` complete to `au` and `al`), while matching of the incomplete text stays case-insensitive. With `case_sensitive=True` behaviour is unchanged."
+    },
+    {
+      "id": "parameter-source-early",
+      "type": "bugfix",
+      "commit": "7d05a59b9",
+      "statement": "`ctx.get_parameter_source(name)` returns `None` when it is called while the parameter is still being processed: inside a custom `ParamType.convert()` and inside the callback of an eager option. It used to return the real source in earlier releases.\n\nReproduce:\n\n```python\nimport click\n\nclass Source(click.ParamType):\n    name = \"source\"\n    def convert(self, value, param, ctx):\n        return {\"value\": value, \"source\": ctx.get_parameter_source(param.name)}\n\n@click.command()\n@click.option(\"--default\", type=Source(), default=\"/tmp/file\")\ndef cli(default):\n    click.echo(default)\n```\n\nRunning `cli` with no arguments prints `'source': None`; expected `ParameterSource.DEFAULT` (and `ParameterSource.COMMANDLINE` when `--default x` is passed). Likewise, an eager boolean flag option with a callback must see `DEFAULT` or `COMMANDLINE` from `ctx.get_parameter_source(param.name)` inside the callback. The source reported after parsing has finished must stay correct, including when several options share one parameter name."
+    },
+    {
+      "id": "progressbar-final-position",
+      "type": "bugfix",
+      "commit": "f316d5cb3",
+      "statement": "`click.progressbar` does not reach its total when `update_min_steps` does not divide the length.\n\nReproduce (with output going to a terminal):\n\n```python\nwith click.progressbar(length=20, show_pos=True, update_min_steps=7) as bar:\n    for _ in range(20):\n        bar.update(1)\n# the bar ends at 14/20 and bar.pos == 14\n```\n\nThe same happens when iterating `click.progressbar(range(20), update_min_steps=7)`.\n\nExpected: when the bar finishes it has settled on its true position: `bar.pos == 20`, `bar.finished` is true, and the rendered output contains `20/20`. This must hold for any `update_min_steps`, including values larger than the length, and for both the iterate and the `update()` styles."
+    },
+    {
+      "id": "show-envvar-sequence",
+      "type": "bugfix",
+      "commit": "c53d3732b",
+      "statement": "With `show_envvar=True`, an option whose `envvar` is a list or tuple shows the `repr` of the whole sequence in the missing-option error, and an empty `envvar` is rendered as if it named a variable.\n\nExpected behaviour for `click.Option([\"--units\"], envvar=..., show_envvar=True, required=True)` when the option is missing:\n\n- `envvar=\"UNITS\"` or `[\"UNITS\"]`: `Error: Missing option '--units' (env var: 'UNITS').`\n- `envvar=[\"WEATHER_UNITS\", \"UNITS\"]` (list or tuple): `Error: Missing option '--units' (env var: 'WEATHER_UNITS', 'UNITS').`\n- `envvar=[]` or `\"\"`: `Error: Missing option '--units'.` (no env var hint)\n\nAnd in `--help` output, an empty `envvar` (`[]` or `\"\"`) must behave exactly like `envvar=None`: the option line is `  --units TEXT` with no `[env var: ]` suffix, and when the command is run with `auto_envvar_prefix=\"WEATHER\"` it shows `[env var: WEATHER_UNITS]`."
+    },
+    {
+      "id": "runner-context-settings",
+      "type": "feature",
+      "commit": "90a2973f8",
+      "statement": "Add a `context_settings` keyword argument to `CliRunner.invoke` in `click.testing`.\n\nMotivation: extra keyword arguments of `invoke()` are forwarded to the command's `main()`, but a context setting whose name is also a parameter of `invoke()` itself, such as `color`, cannot be passed that way.\n\nRequirements:\n\n- `runner.invoke(cli, context_settings={...})` accepts a mapping (or `None`, the default) and passes those settings to the `Context` of the invoked command. They take precedence over the command's own `context_settings`.\n- `runner.invoke(cli, color=False, context_settings={\"color\": True})` results in `ctx.color is True` inside the command, and styled output keeps its ANSI codes; `context_settings={\"color\": False}` with `color=True` strips them. This applies to `echo`/`secho`, `prompt`, `confirm`, and `echo_via_pager`.\n- With `context_settings` of `None`, `{}`, or `{\"color\": None}`, `ctx.color` stays `None` and the runner's own `color` argument decides, exactly as today.\n- A setting given both as an extra keyword argument and in `context_settings` is an error, like a keyword argument given twice: `runner.invoke(cli, obj=\"extra\", context_settings={\"obj\": \"settings\"}, catch_exceptions=False)` raises `TypeError` whose message contains `multiple values for keyword argument 'obj'`.\n- Existing calls to `invoke()` keep working unchanged."
+    }
+  ],
+  "lean_commands": {
+    "test": "uv run --locked --no-default-groups --group tests pytest -q"
+  }
+}

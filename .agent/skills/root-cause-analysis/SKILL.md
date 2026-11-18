@@ -1,6 +1,6 @@
 ---
 name: root-cause-analysis
-description: Trace a defect or incident from symptom to underlying cause using evidence and hypothesis testing. Use for bug investigation, failing tests, and production issues.
+description: Trace a defect from symptom to cause with evidence and hypothesis testing. Use for bugs, failing tests, and production issues.
 ---
 # Root cause analysis
 

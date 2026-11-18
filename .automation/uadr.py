@@ -18,6 +18,7 @@ COMMANDS = {
     "audit": ("scripts/context_audit.py", "Estimate token cost of agent context"),
     "new": ("scripts/new.py", "Create a doc from a template (module, adr, doc)"),
     "index": ("scripts/index.py", "Regenerate docs/index.md from doc frontmatter"),
+    "lean": ("scripts/lean.py", "Generate a lean AGENTS.md from the code (no agent run)"),
     "scan": ("scripts/scan.py", "Inventory an existing repository"),
     "adopt": ("scripts/adopt.py", "Install the framework (greenfield or existing repo)"),
     "sync-adapters": ("scripts/sync_adapters.py", "Link skills into agent-native folders"),

@@ -1,6 +1,6 @@
 ---
 name: performance-analysis
-description: Measure, profile, and improve performance using evidence rather than intuition. Use when investigating slowness, high resource use, or validating an optimisation.
+description: Measure, profile, and improve performance with evidence. Use when investigating slowness or validating an optimisation.
 ---
 # Performance analysis
 

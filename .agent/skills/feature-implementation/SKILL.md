@@ -1,6 +1,6 @@
 ---
 name: feature-implementation
-description: Implement new behaviour so it matches the conventions and structure of the surrounding code. Use when writing production code for a feature, enhancement, or API.
+description: Implement new behaviour matching the surrounding code's conventions. Use when writing production code for a feature, enhancement, or API.
 ---
 # Feature implementation
 

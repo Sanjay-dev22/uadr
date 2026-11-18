@@ -210,6 +210,10 @@ def main(argv: list[str], root: Path = lib.ROOT) -> int:
     if not in_place:
         log = copy_framework(root, target, args.upgrade)
     if args.upgrade:
+        mine, theirs = target / "AGENTS.md", (root / "AGENTS.md").read_text(encoding="utf-8")
+        kept = BLOCK.search(mine.read_text(encoding="utf-8")) if mine.is_file() else None
+        if kept:  # framework rules are replaced; the project's own description block is preserved
+            mine.write_text(BLOCK.sub(lambda m: kept.group(0), theirs), encoding="utf-8")
         cfg, version = lib.load_config(target), lib.load_config(root)["framework_version"]
         cfg["framework_version"] = version
         lib.write_json(target / lib.CONFIG_REL, cfg)

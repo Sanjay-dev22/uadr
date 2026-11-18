@@ -8,7 +8,7 @@ It is not a boilerplate application. It adds three things beside your code: a sh
 ## How it works
 
 ```text
-AGENTS.md (about 540 tokens, the only always-loaded file)
+AGENTS.md (about 570 tokens; with preloaded skill descriptions, about 1,700 measured)
    -> uadr.py route "<task>" --path <file>
         -> one workflow            .agent/workflows/
         -> the module doc(s)       docs/modules/        for the paths being touched
@@ -17,7 +17,17 @@ AGENTS.md (about 540 tokens, the only always-loaded file)
    -> implement -> uadr.py run all + uadr.py check -> update docs and memory -> completion report
 ```
 
-A typical task loads about 1,300 to 1,600 tokens of framework and documentation context before reading code, which is around 5% of the full corpus. See [token efficiency](.agent/guide/token-efficiency.md).
+The docs an agent is routed to for a typical task are an estimated 1,300 to 1,600 tokens, about 5% of the framework and documentation corpus. See [token efficiency](.agent/guide/token-efficiency.md).
+
+## Measured results
+
+The framework was benchmarked with real agent runs on real upstream bug fixes, judged by hidden tests: 156 runs on [pallets/click](https://github.com/pallets/click) (13,000 lines) and [sympy/sympy](https://github.com/sympy/sympy) (530,000 lines), with two models. Read [benchmark/README.md](benchmark/README.md) before adopting. In short:
+
+- The framework **cost more per task and never saved tokens**: 24% to 86% more than the bare repository on click, 31% more on SymPy.
+- Every condition solved every task, so no correctness benefit was shown, and these tasks could not have shown one.
+- A seven-line hand-written `AGENTS.md` produced the same test discipline at equal or lower cost.
+- Agents ran the router but never opened a workflow or module doc, so the generated per-module docs went unused.
+- Not yet measured: vague, symptom-only requests where the agent must first locate the code; multi-session work; governance and safety behaviour.
 
 ## Quick start
 
@@ -58,6 +68,7 @@ Full instructions: [adoption guide](.agent/guide/adoption.md).
 
 ## Documentation
 
+- [Benchmark: method, results, limits](benchmark/README.md)
 - [Framework architecture and diagram](.agent/guide/architecture.md)
 - [Adoption and usage guide](.agent/guide/adoption.md)
 - [Token efficiency and measurements](.agent/guide/token-efficiency.md)

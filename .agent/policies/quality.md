@@ -11,7 +11,7 @@ A task is done when all of the following hold:
 1. The acceptance criteria are met and nothing outside the task's scope changed.
 2. New or changed behaviour has automated tests, and a bug fix has a test that fails without the fix.
 3. `python3 .automation/uadr.py run all` was executed and every configured command passed.
-4. `python3 .automation/uadr.py check` passed.
+4. `python3 .automation/uadr.py check` passed, if docs or framework files changed.
 5. Affected documentation is updated in the same change.
 6. No secrets, debug code, commented-out code, or unrelated formatting changes are in the diff.
 7. Required approvals were obtained and are referenced.

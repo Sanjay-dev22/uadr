@@ -1,6 +1,6 @@
 ---
 name: dependency-analysis
-description: Determine what a piece of code depends on and what depends on it, internally and externally. Use before changing an interface, moving code, altering a schema, or upgrading a package.
+description: Find what code depends on and what depends on it. Use before changing an interface, moving code, altering a schema, or upgrading a package.
 ---
 # Dependency analysis
 

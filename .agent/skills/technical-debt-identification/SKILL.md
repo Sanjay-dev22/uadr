@@ -1,6 +1,6 @@
 ---
 name: technical-debt-identification
-description: Identify, evidence, and prioritise technical debt and risk in a codebase. Use during onboarding, before planning work in an area, or when asked to assess code health.
+description: Identify, evidence, and prioritise technical debt and risk. Use during onboarding or when assessing code health.
 ---
 # Technical debt identification
 

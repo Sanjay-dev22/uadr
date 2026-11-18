@@ -1,6 +1,6 @@
 ---
 name: test-generation
-description: Write automated tests that prove behaviour and fail when it breaks, in the project's existing style. Use when adding tests for new code, reproducing a bug, or closing a coverage gap.
+description: Write tests that prove behaviour and fail when it breaks, in the project's style. Use when adding tests, reproducing a bug, or closing a coverage gap.
 ---
 # Test generation
 

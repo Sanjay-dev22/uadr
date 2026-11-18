@@ -16,7 +16,7 @@ UADR separates three things that are usually mixed together:
 
 ```mermaid
 flowchart TD
-    A["Agent platform loads its native file<br/>CLAUDE.md / copilot-instructions.md / AGENTS.md"] --> B["AGENTS.md<br/>~540 tokens, always loaded"]
+    A["Agent platform loads its native file<br/>CLAUDE.md / copilot-instructions.md / AGENTS.md"] --> B["AGENTS.md<br/>~570 tokens, always loaded"]
     B --> C[".agent/memory/state.md<br/>project state"]
     C --> D{{"uadr.py route<br/>task + paths"}}
     D -->|routes.json| E["One workflow<br/>.agent/workflows/"]

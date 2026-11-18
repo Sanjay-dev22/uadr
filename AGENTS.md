@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Entry point for every AI coding agent. This file is the only always-loaded context: keep it short and route to detail instead of adding it here.
+Entry point for every AI coding agent, and the only always-loaded file. Keep it short; route to detail.
 
 ## Repository
 
@@ -9,26 +9,25 @@ UADR framework template: an agent operating framework with no application code y
 To adopt it, follow `.agent/workflows/init-greenfield.md` (new project) or `.agent/workflows/onboard-existing-repo.md` (existing code).
 <!-- uadr:project:end -->
 
-## Start every task
+## Every task
 
 1. Read `.agent/memory/state.md` (current state and active work).
-2. Route the task: `python3 .automation/uadr.py route "<task description>" --path <file-or-dir>`. It names one workflow, the module doc for those paths, and conditional reading. Same data: `.agent/routing/routes.json`.
-3. Read only what the route lists. Open a skill in `.agent/skills/` only when a workflow step calls for it.
-4. Execute the workflow: Understand, Plan, Analyze, Implement, Test, Review, Document, Complete.
+2. Route it: `python3 .automation/uadr.py route "<task>" --path <file-or-dir>`. The output names the workflow, the module doc for those paths, and what the task must deliver.
+3. Scale reading to the task. A small change inside one module needs only the router output and the code. Open the workflow and the module doc when the change spans files, alters behaviour other code depends on, or the area is unfamiliar. Open a skill in `.agent/skills/` only when a workflow step calls for it.
 
-Do not read `docs/` wholesale; `docs/index.md` lists each doc with when to read it.
+Never read `docs/` wholesale; `docs/index.md` lists each doc with when to read it.
 
-## Commands
+## Done means
 
-- Project commands: `python3 .automation/uadr.py run <setup|lint|static|build|test|all>`
-- Framework gates: `python3 .automation/uadr.py check`
-- New module doc or ADR: `python3 .automation/uadr.py new <module|adr> ...`
+- Every behaviour change has an automated test that fails without it. A bug fix starts from a failing test.
+- You ran the tests with `python3 .automation/uadr.py run test` (`run all` adds lint, static analysis, build) and report the real result. Anything you did not run is reported as not run, with the reason.
+- User-visible changes are in the project's changelog, and affected docs are updated in the same change (`.agent/policies/documentation.md`).
+- If you changed docs or `.agent/` files, `python3 .automation/uadr.py check` passes.
+- The final message is the completion report from `.agent/policies/quality.md`.
 
 ## Rules
 
-- Investigate before modifying: read the code and its callers before changing it. Never invent architecture; mark gaps `UNKNOWN:` and guesses `ASSUMPTION:`.
-- Never report tests, builds, or checks as passing unless you ran them in this session. If you could not run something, say so and why.
-- Update affected docs in the same change (`.agent/policies/documentation.md`). Record only durable facts in `.agent/memory/`.
+- Investigate before modifying: read the code and its callers first. Never invent architecture; mark gaps `UNKNOWN:` and guesses `ASSUMPTION:`.
+- Record only durable facts in `.agent/memory/`.
 - Never read, print, commit, or transmit secrets; never weaken a security check (`.agent/policies/security.md`).
-- Stop and get human approval before: production access or deployment, destructive data or schema operations, infrastructure changes, architecture decisions, new dependencies, changes to auth or security controls, rewriting git history. Full list: `.agent/policies/approvals.md`.
-- Finish with the completion report in `.agent/policies/quality.md`.
+- Stop for human approval before: production access or deployment, destructive data or schema operations, infrastructure changes, architecture decisions, new dependencies, changes to auth or security controls, rewriting git history. Full list: `.agent/policies/approvals.md`.
