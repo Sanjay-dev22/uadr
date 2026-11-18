@@ -163,6 +163,39 @@ class AdoptionTests(unittest.TestCase):
                          (ROOT / ".agent/workflows/bugfix.md").read_text())
 
 
+class LeanTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.target = Path(self.tmp.name) / "app"
+        write(self.target, "src/app/__init__.py", '"""Application package."""\n')
+        write(self.target, "src/app/billing.py", '"""Invoice and payment logic."""\n\nclass Invoice:\n    pass\n')
+        write(self.target, "src/app/users.py", "class User:\n    pass\n")
+        write(self.target, "examples/demo/demo.py", "print(1)\n")
+        write(self.target, "tests/test_billing.py", "def test_x():\n    pass\n")
+        write(self.target, "CHANGELOG.md", "# Changes\n")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_generates_small_useful_entry_point(self):
+        result = uadr(ROOT, "lean", "--target", str(self.target), "--command", "test=pytest -q")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        text = (self.target / "AGENTS.md").read_text()
+        self.assertIn("`src/app/billing.py` - Invoice and payment logic", text)
+        self.assertIn("defines User", text)
+        self.assertNotIn("examples/", text)
+        self.assertIn("test: `pytest -q`", text)
+        self.assertIn("`CHANGELOG.md` entry", text)
+        self.assertLess(lib.est_tokens(text), 450)
+        self.assertEqual((self.target / "CLAUDE.md").read_text(), "@AGENTS.md\n")
+
+    def test_never_overwrites_existing_instructions(self):
+        write(self.target, "AGENTS.md", "mine\n")
+        result = uadr(ROOT, "lean", "--target", str(self.target))
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual((self.target / "AGENTS.md").read_text(), "mine\n")
+
+
 class GateDetectionTests(unittest.TestCase):
     """Each gate must actually fail on the defect it exists to catch."""
 

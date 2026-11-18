@@ -232,6 +232,12 @@ def apply_condition(workspace: Path, condition: str, suite: dict, overlay: Path)
     if condition == "minimal":
         (workspace / "AGENTS.md").write_text(suite["minimal_agents_md"], encoding="utf-8")
         (workspace / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
+    elif condition == "lean":
+        args = [sys.executable, str(FRAMEWORK / ".automation/uadr.py"), "lean", "--target", str(workspace),
+                "--name", suite["repo"].rstrip("/").split("/")[-1]]
+        for kind, cmd in suite.get("lean_commands", {}).items():
+            args += ["--command", f"{kind}={cmd}"]
+        sh(args)
     elif condition.startswith("uadr"):
         before = set(p.relative_to(workspace).as_posix() for p in workspace.rglob("*.md"))
         shutil.copytree(overlay, workspace, dirs_exist_ok=True, symlinks=True)

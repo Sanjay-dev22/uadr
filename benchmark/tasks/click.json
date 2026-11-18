@@ -50,5 +50,8 @@
       "commit": "90a2973f8",
       "statement": "Add a `context_settings` keyword argument to `CliRunner.invoke` in `click.testing`.\n\nMotivation: extra keyword arguments of `invoke()` are forwarded to the command's `main()`, but a context setting whose name is also a parameter of `invoke()` itself, such as `color`, cannot be passed that way.\n\nRequirements:\n\n- `runner.invoke(cli, context_settings={...})` accepts a mapping (or `None`, the default) and passes those settings to the `Context` of the invoked command. They take precedence over the command's own `context_settings`.\n- `runner.invoke(cli, color=False, context_settings={\"color\": True})` results in `ctx.color is True` inside the command, and styled output keeps its ANSI codes; `context_settings={\"color\": False}` with `color=True` strips them. This applies to `echo`/`secho`, `prompt`, `confirm`, and `echo_via_pager`.\n- With `context_settings` of `None`, `{}`, or `{\"color\": None}`, `ctx.color` stays `None` and the runner's own `color` argument decides, exactly as today.\n- A setting given both as an extra keyword argument and in `context_settings` is an error, like a keyword argument given twice: `runner.invoke(cli, obj=\"extra\", context_settings={\"obj\": \"settings\"}, catch_exceptions=False)` raises `TypeError` whose message contains `multiple values for keyword argument 'obj'`.\n- Existing calls to `invoke()` keep working unchanged."
     }
-  ]
+  ],
+  "lean_commands": {
+    "test": "uv run --locked --no-default-groups --group tests pytest -q"
+  }
 }

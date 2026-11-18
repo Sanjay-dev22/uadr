@@ -3,10 +3,17 @@
   "src": "sympy",
   "tests": "sympy",
   "test_pattern": "/tests/",
-  "test_cmd": ["python", "-m", "pytest"],
+  "test_cmd": [
+    "python",
+    "-m",
+    "pytest"
+  ],
   "eval_scope": "changed_test_files",
   "git_tag": "sympy-1.15.0",
-  "strip_files": ["AGENTS.md", "CLAUDE.md"],
+  "strip_files": [
+    "AGENTS.md",
+    "CLAUDE.md"
+  ],
   "onboard_commit": "85d3998a45",
   "minimal_agents_md": "# AGENTS.md\n\nSymPy is a Python library for symbolic mathematics.\n\n- Source: `sympy/<subpackage>/`. Tests live beside the code in `sympy/<subpackage>/tests/test_*.py`.\n- Run tests: `python -m pytest sympy/<subpackage>/tests/test_<file>.py -q` (pytest is installed). The full suite is slow; run the relevant files.\n- Every behaviour change needs a regression test in the matching test file.\n",
   "tasks": [
@@ -58,5 +65,8 @@
       "commit": "954a05a45",
       "statement": "`solve` crashes with an `IndexError` when given a system of equations that contains no symbols to solve for, and this also breaks an integral.\n\n```python\nfrom sympy import solve, log, integrate, symbols\nx = symbols('x')\nsolve([log(2) + log(3)])                    # IndexError; expected []\nintegrate(2**(2 + 3*x)*3**(5 + 7*x), x)     # fails; expected a closed form\n```\n\nExpected:\n\n- `solve([log(2) + log(3)]) == []` and `solve([log(2) + log(3)], exclude=(x,)) == []` (an equation that is a non-zero constant has no solution)\n- `solve([log(2) + log(3) - log(6)]) == {}` (an equation that is identically zero is satisfied trivially)\n- `solve([x - 1, cos(1)**2 + sin(1)**2 - 1], x) == {x: 1}` and `solve([x - 1, cos(1)**2 + sin(1)**2 - 2], x) == []`\n- `integrate(2**(2 + 3*x)*3**(5 + 7*x), x)` and `heurisch` of the same integrand both return `972*2**(3*x)*3**(7*x)/(3*log(2) + 7*log(3))`"
     }
-  ]
+  ],
+  "lean_commands": {
+    "test": "python -m pytest sympy/<subpackage>/tests/test_<file>.py -q"
+  }
 }
